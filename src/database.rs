@@ -1,7 +1,9 @@
 // use sqlx::{Pool, Postgres, Row};
 use std::error::Error;
 
-use crate::auth::{self, signup};
+use password_auth::verify_password;
+
+use crate::auth::{self, signup, verify_user};
 
 #[allow(unused)]
 pub enum TableFields {
@@ -122,9 +124,16 @@ impl User {
 
         let temp_struct = auth::hash_user(temp_user);
 
+        let value_to_bind = match field {
+            TableFields::Email => &temp_struct.email,
+            TableFields::Password => &temp_struct.password,
+            TableFields::Apikey => &temp_struct.apikey,
+            TableFields::Balance => &temp_struct.balance.to_string(),
+        };
+
         sqlx::query(&query)
-            .bind(new_value)
-            .bind(temp_struct.email)
+            .bind(value_to_bind)
+            .bind(temp_struct.email.clone())
             .execute(&pool)
             .await?;
 
