@@ -1,12 +1,16 @@
 // #![allow(unused)]
 
-use auth::signup;
-use database::User;
+use auth::{generate_api, signup};
+// use axum::extract::Query;
+use std::error::Error;
+// use database::User;
 // use oneAI::Input;
 mod auth;
 mod database;
 mod requests;
 mod server;
+
+use server::server;
 
 // fn read_line() -> String {
 //     let mut user_input = String::new();
@@ -19,6 +23,9 @@ mod server;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // db_testing().await?;
+    // requests_testing().await?;
+    let ok = server().await;
+
     Ok(())
 }
 
@@ -37,21 +44,46 @@ async fn db_testing() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let _user = signup(
+    let user = signup(
         String::from("something@gmail.com"),
         String::from("Something__132;;"),
     )
     .unwrap();
 
-    let get = User::get_row("oa-94763257652657558374".to_string()).await?;
+    // let get = User::get_row("oa-94763257652657558374".to_string()).await?;
 
-    println!("{get:#?}");
+    // println!("{get:#?}");
+    //$argon2id$v=19$m=19456,t=2,p=1$vP65R+anMrvYO2XyFUjFzA$04uceat0q5Pk0m1vicUV2RYARuHYRMZ5HKPbAun8AQc
+    //$argon2id$v=19$m=19456,t=2,p=1$vP65R+anMrvYO2XyFUjFzA$04uceat0q5Pk0m1vicUV2RYARuHYRMZ5HKPbAun8AQc
+    //$argon2id$v=19$m=19456,t=2,p=1$5AWHMtxmUp0TLPMLCj+RGA$jJK59R1LkEd1pDqrTIvtCPsq/KBYjbWupCkaz897PlU
 
-    // let user_something = user.new_user().await.expect("Error");
+    let something = user
+        .update_db(database::TableFields::Apikey, generate_api().as_str())
+        .await?;
 
-    // let _ = user
-    //     .update_db(database::TableFields::Password, "somethingElse--_:;")
-    //     .await?;
-    //
+    Ok(())
+}
+
+#[allow(unused)]
+async fn requests_testing() -> Result<(), Box<dyn Error>> {
+    let input_str = r#"
+    {
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "data": {
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": "Hello, who are you?"}]
+        },
+        "ai_provider": "OpenAI"
+    }
+    "#;
+
+    let input = requests::Input::parse_input(input_str)?;
+    println!("{:#?}", input);
+    Ok(())
+}
+
+async fn _server_testing() -> Result<(), Box<dyn Error>> {
+    // use server::*;
+
     Ok(())
 }
