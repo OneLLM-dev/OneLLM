@@ -130,6 +130,34 @@ impl User {
 
         Ok(())
     }
+
+    pub async fn login_user(username: String, password: String) -> Result<(), Box<dyn Error>> {
+        let url = "postgres://REDACTED";
+        let pool = sqlx::postgres::PgPool::connect(url).await?;
+
+        let exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)")
+                .bind(username.clone())
+                .fetch_one(&pool)
+                .await?;
+
+        if !exists {
+            return Err(Box::new(MissingUser("No such user was found".to_string())));
+        }
+
+        let password_hash: String =
+            sqlx::query_scalar("SELECT password FROM users WHERE username = $1")
+                .bind(username.clone())
+                .fetch_one(&pool)
+                .await?;
+
+        let result = match verify_password(password, password_hash.as_str()) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e.into()),
+        };
+
+        result
+    }
 }
 
 pub async fn init_db() -> Result<(), Box<dyn Error>> {
