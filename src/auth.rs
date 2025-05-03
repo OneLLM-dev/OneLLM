@@ -1,15 +1,13 @@
-use argon2::password_hash::{PasswordHasher, SaltString, rand_core::OsRng};
 use argon2::{
     Argon2,
-    password_hash::{PasswordHash, PasswordVerifier},
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
+
 use rand::Rng;
+
 use zxcvbn::zxcvbn;
 
-use std::error::Error;
-use std::hash::{DefaultHasher, Hash, Hasher};
-
-use crate::database::{self, User};
+use crate::database::User;
 
 pub fn hasher(input: &str) -> String {
     let salt = SaltString::generate(&mut OsRng);
@@ -20,21 +18,16 @@ pub fn hasher(input: &str) -> String {
         .to_string()
 }
 
-pub fn std_hash(input: String) -> String {
-    let mut output = DefaultHasher::new();
-    input.hash(&mut output);
-    output.finish().to_string()
-}
-
 pub fn signup(email: String, password: String) -> Option<User> {
     match zxcvbn(&password, &[email.as_str()]) {
         Ok(entropy) => {
             if entropy.score() >= 3 {
+                let apikey = generate_api();
                 let user = User {
                     email,
                     password,
-                    apikey: generate_api(),
-                    balance: 0.0,
+                    apikey,
+                    balance: 0,
                 };
 
                 return Some(hash_user(user));
@@ -46,15 +39,16 @@ pub fn signup(email: String, password: String) -> Option<User> {
             println!("Error: {e}");
         }
     }
+
     None
 }
 
 pub fn hash_user(user: User) -> User {
     User {
-        email: std_hash(user.email),
+        email: user.email,
         password: hasher(user.password.as_str()),
-        apikey: std_hash(generate_api()),
-        balance: 0.0,
+        apikey: generate_api(),
+        balance: 0,
     }
 }
 
@@ -67,10 +61,11 @@ pub fn generate_api() -> String {
     format!("oa-{}", res)
 }
 
+#[allow(unused)]
 pub fn verify_user(to_verify: (String, String), actual: (String, String)) -> bool {
     verify(to_verify.0, actual.0) && verify(to_verify.1, actual.1)
 }
-
+#[allow(unused)]
 fn verify(to_check: String, answer: String) -> bool {
     let parsed_hash = PasswordHash::new(&answer).expect("failed");
     Argon2::default()
