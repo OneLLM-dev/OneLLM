@@ -1,17 +1,18 @@
 #![allow(non_snake_case)]
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum AIProvider {
     OpenAI,
     Anthropic,
     Gemini,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Input {
     pub endpoint: String,
-    pub data: String,
+    pub data: Value,
     pub ai_provider: AIProvider,
 }
 
