@@ -1,8 +1,9 @@
-use sqlx::{Pool, Postgres, Row};
+// use sqlx::{Pool, Postgres, Row};
 use std::error::Error;
 
 use crate::auth::{self, signup};
 
+#[allow(unused)]
 pub enum TableFields {
     Email,
     Password,
@@ -15,10 +16,60 @@ pub struct User {
     pub email: String,
     pub password: String,
     pub apikey: String,
-    pub balance: f64,
+    pub balance: i64,
+}
+
+#[derive(Debug)]
+struct MissingUser(String);
+impl Error for MissingUser {}
+
+impl std::fmt::Display for MissingUser {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Custom error: {}", self.0)
+    }
 }
 
 impl User {
+    pub async fn get_row(apikey: String) -> Result<User, Box<dyn Error>> {
+        let url = "postgres://REDACTED";
+        let pool = sqlx::postgres::PgPool::connect(url).await?;
+
+        let exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE apikey = $1)")
+                .bind(apikey.clone())
+                .fetch_one(&pool)
+                .await?;
+
+        if !exists {
+            return Err(Box::new(MissingUser("No such user was found".to_string())));
+        }
+
+        let email: String = sqlx::query_scalar("SELECT email FROM users WHERE apikey = $1")
+            .bind(apikey.clone())
+            .fetch_one(&pool)
+            .await?;
+
+        let password: String = sqlx::query_scalar("SELECT password FROM users WHERE apikey = $1")
+            .bind(apikey.clone())
+            .fetch_one(&pool)
+            .await?;
+
+        let balance_str: String = sqlx::query_scalar("SELECT balance FROM users WHERE apikey = $1")
+            .bind(apikey.clone())
+            .fetch_one(&pool)
+            .await?;
+
+        let balance: i64 = balance_str.parse()?;
+
+        Ok(Self {
+            email,
+            password,
+            apikey,
+            balance,
+        })
+    }
+
+    #[allow(unused)]
     pub async fn new_user(&self) -> Result<(), Box<dyn Error>> {
         let url = "postgres://REDACTED";
         let pool = sqlx::postgres::PgPool::connect(url).await?;
@@ -38,6 +89,7 @@ impl User {
         Ok(())
     }
 
+    #[allow(unused)]
     pub async fn update_db(
         &self,
         field: TableFields,
