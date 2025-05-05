@@ -24,7 +24,7 @@ use server::server;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // db_testing().await?;
     // requests_testing().await?;
-    let ok = server().await;
+    let _ok = server().await;
 
     Ok(())
 }
