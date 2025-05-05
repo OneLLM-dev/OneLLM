@@ -15,4 +15,5 @@ password-auth = "1.0.0"
 argon2 = "0.5.3"
 rand = "0.9.1"
 tower = "0.5.2"
-tower-http = "0.6.2"
+tower-http = { version = "0.6.2", features = ["fs"] }
+http = "1.3.1"
