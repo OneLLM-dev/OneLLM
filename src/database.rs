@@ -3,7 +3,7 @@ use std::error::Error;
 
 use password_auth::verify_password;
 
-use crate::auth::{self, signup, verify_user};
+use crate::auth::{self, signup};
 
 #[allow(unused)]
 pub enum TableFields {
@@ -139,7 +139,7 @@ impl User {
 
         Ok(())
     }
-
+    #[allow(unused)]
     pub async fn login_user(username: String, password: String) -> Result<(), Box<dyn Error>> {
         let url = "postgres://umangsurana:Ikeepforget159@localhost:5432/TestOneAI";
         let pool = sqlx::postgres::PgPool::connect(url).await?;
