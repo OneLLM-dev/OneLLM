@@ -1,13 +1,13 @@
 use argon2::{
     Argon2,
-    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
+    password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
 };
 
 use rand::Rng;
 
 use zxcvbn::zxcvbn;
 
-use crate::database::User;
+use crate::utils::*;
 
 pub fn hasher(input: &str) -> String {
     let salt = SaltString::generate(&mut OsRng);
@@ -59,16 +59,4 @@ pub fn generate_api() -> String {
     }
 
     format!("oa-{}", res)
-}
-
-#[allow(unused)]
-pub fn verify_user(to_verify: (String, String), actual: (String, String)) -> bool {
-    verify(to_verify.0, actual.0) && verify(to_verify.1, actual.1)
-}
-#[allow(unused)]
-fn verify(to_check: String, answer: String) -> bool {
-    let parsed_hash = PasswordHash::new(&answer).expect("failed");
-    Argon2::default()
-        .verify_password(to_check.as_bytes(), &parsed_hash)
-        .is_ok()
 }
