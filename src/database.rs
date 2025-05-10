@@ -4,22 +4,7 @@ use std::error::Error;
 use password_auth::verify_password;
 
 use crate::auth::{self, signup};
-
-#[allow(unused)]
-pub enum TableFields {
-    Email,
-    Password,
-    Apikey,
-    Balance,
-}
-
-#[derive(Debug)]
-pub struct User {
-    pub email: String,
-    pub password: String,
-    pub apikey: String,
-    pub balance: i64,
-}
+use crate::utils::*;
 
 #[derive(Debug)]
 struct MissingUser(String);
@@ -32,7 +17,7 @@ impl std::fmt::Display for MissingUser {
 }
 
 impl User {
-    pub async fn get_row(apikey: String) -> Result<User, Box<dyn Error>> {
+    pub async fn get_row_api(apikey: String) -> Result<User, Box<dyn Error>> {
         let url = "postgres://umangsurana:Ikeepforget159@localhost:5432/TestOneAI";
         let pool = sqlx::postgres::PgPool::connect(url).await?;
 
@@ -58,6 +43,44 @@ impl User {
 
         let balance_str: String = sqlx::query_scalar("SELECT balance FROM users WHERE apikey = $1")
             .bind(apikey.clone())
+            .fetch_one(&pool)
+            .await?;
+
+        let balance: i64 = balance_str.parse()?;
+
+        Ok(Self {
+            email,
+            password,
+            apikey,
+            balance,
+        })
+    }
+    pub async fn get_row(email: String) -> Result<User, Box<dyn Error>> {
+        let url = "postgres://umangsurana:Ikeepforget159@localhost:5432/TestOneAI";
+        let pool = sqlx::postgres::PgPool::connect(url).await?;
+
+        let exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)")
+                .bind(email.clone())
+                .fetch_one(&pool)
+                .await?;
+
+        if !exists {
+            return Err(Box::new(MissingUser("No such user was found".to_string())));
+        }
+
+        let apikey: String = sqlx::query_scalar("SELECT apikey FROM users WHERE email = $1")
+            .bind(email.clone())
+            .fetch_one(&pool)
+            .await?;
+
+        let password: String = sqlx::query_scalar("SELECT password FROM users WHERE email = $1")
+            .bind(email.clone())
+            .fetch_one(&pool)
+            .await?;
+
+        let balance_str: String = sqlx::query_scalar("SELECT balance FROM users WHERE email = $1")
+            .bind(email.clone())
             .fetch_one(&pool)
             .await?;
 
@@ -179,7 +202,7 @@ pub async fn init_db() -> Result<(), Box<dyn Error>> {
 }
 
 impl TableFields {
-    fn match_field(&self) -> &str {
+    pub fn match_field(&self) -> &str {
         match self {
             TableFields::Email => "email",
             TableFields::Password => "password",

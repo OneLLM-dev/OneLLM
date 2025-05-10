@@ -9,8 +9,11 @@ mod auth;
 mod database;
 mod requests;
 mod server;
+mod utils;
 
 use server::server;
+
+use crate::utils::*;
 
 // fn read_line() -> String {
 //     let mut user_input = String::new();
@@ -58,7 +61,7 @@ async fn db_testing() -> Result<(), Box<dyn std::error::Error>> {
     //$argon2id$v=19$m=19456,t=2,p=1$5AWHMtxmUp0TLPMLCj+RGA$jJK59R1LkEd1pDqrTIvtCPsq/KBYjbWupCkaz897PlU
 
     let something = user
-        .update_db(database::TableFields::Apikey, generate_api().as_str())
+        .update_db(TableFields::Apikey, generate_api().as_str())
         .await?;
 
     Ok(())
