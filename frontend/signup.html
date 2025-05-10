@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sign Up - OneLLM</title>
+
+        <link rel="stylesheet" href="assets/css/auth.css" />
+        <link rel="stylesheet" href="assets/css/main.css" />
+
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+    </head>
+    <body>
+        <header>
+            <div class="container">
+                <nav>
+                    <a href="index.html" class="logo">OneLLM</a>
+                    <div class="nav-links">
+                        <a href="index.html">Home</a>
+                        <a href="docs/index.html">Documentation</a>
+                        <a href="pricing/index.html">Pricing</a>
+                        <a href="dashboard.html">Dashboard</a>
+                    </div>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h1>Create Your OneLLM Account</h1>
+                    <p>Get started with a unified API for all your AI needs</p>
+                </div>
+
+                <form id="signup-form">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input
+                            type="email"
+                            id="email"
+                            class="form-control"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            class="form-control"
+                            required
+                        />
+                        <small class="form-text"
+                            >Password must be at least 8 characters and include
+                            a number and special character</small
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-item terms">
+                            <input type="checkbox" id="terms" required />
+                            <label for="terms"
+                                >I agree to the
+                                <a href="#">Terms of Service</a> and
+                                <a href="#">Privacy Policy</a></label
+                            >
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        Create Account
+                    </button>
+
+                    <div class="auth-alt">
+                        <p>
+                            Already have an account?
+                            <a href="login.html">Log in</a>
+                        </p>
+                    </div>
+                </form>
+                OneLLM
+            </div>
+        </div>
+
+        <footer>
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-brand">
+                        <h3>OneLLM</h3>
+                        <p>The unified API for all your AI needs</p>
+                    </div>
+                    <div class="footer-links">
+                        <div class="footer-column">
+                            <h4>Product</h4>
+                            <a href="docs.html">Documentation</a>
+                            <a href="pricing.html">Pricing</a>
+                        </div>
+                        <div class="footer-column">
+                            <h4>Legal</h4>
+                            <a href="#">Terms</a>
+                            <a href="#">Privacy</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom"></div>
+            </div>
+        </footer>
+
+        <script src="assets/js/main.js"></script>
+    </body>
+</html>
