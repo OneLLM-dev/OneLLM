@@ -6,30 +6,20 @@ use axum::{
     response::Html,
     routing::{get, post},
 };
+// use std::net::SocketAddr;
 
 use tower_http::services::ServeDir;
 
-use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::database::User;
+use crate::auth;
 use crate::requests::Input;
-
-#[derive(Deserialize, Serialize)]
-pub struct Output {
-    pub code: u32,
-    pub output: Value,
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct Data {
-    pub max_tokens: u128,
-}
+use crate::utils::*;
 
 #[allow(unused)]
 pub async fn server() {
     let app = Router::new()
-        .nest_service("/home/", ServeDir::new("frontend/home"))
+        .fallback_service(ServeDir::new("frontend"))
         .route("/api", get(handle_api));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -109,13 +99,30 @@ pub async fn handle_api(headers: HeaderMap, Json(payload): Json<Input>) -> Json<
         output: json!(output),
     })
 }
-// #[allow(unused)]
-// async fn handle_website() -> Html<String> {
-//     let file_contents = std::fs::read_to_string("frontend/index.html")
-//         .unwrap_or_else(|_| "<h1>500 Internal Server Error</h1>".to_string());
 
-//     Html(file_contents)
-// }
+pub async fn _handle_website(Json(query): Json<WebInput>) -> Json<WebOutput> {
+    match query.function {
+        WebQuery::Login => {}
+        WebQuery::Signup => {
+            let user = auth::signup(
+                query.data["email"].to_string(),
+                query.data["password"].to_string(),
+            )
+            .unwrap();
+            return Json(WebOutput { user });
+        }
+        _ => {}
+    }
+
+    Json(WebOutput {
+        user: User {
+            email: String::new(),
+            password: String::new(),
+            apikey: String::new(),
+            balance: 0,
+        },
+    })
+}
 
 /*------Unauthorised String returning functions------*/
 
