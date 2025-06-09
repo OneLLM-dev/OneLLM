@@ -7,6 +7,7 @@ use std::error::Error;
 // use oneAI::Input;
 mod auth;
 mod database;
+mod pricing;
 mod requests;
 mod server;
 mod utils;
@@ -51,6 +52,7 @@ async fn db_testing() -> Result<(), Box<dyn std::error::Error>> {
         String::from("something@gmail.com"),
         String::from("Something__132;;"),
     )
+    .await
     .unwrap();
 
     // let get = User::get_row("oa-94763257652657558374".to_string()).await?;
