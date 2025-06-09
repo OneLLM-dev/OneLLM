@@ -3,6 +3,7 @@ use argon2::{
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
 };
 
+use password_auth::verify_password;
 use rand::Rng;
 
 use zxcvbn::zxcvbn;
@@ -18,7 +19,19 @@ pub fn hasher(input: &str) -> String {
         .to_string()
 }
 
-pub fn signup(email: String, password: String) -> Option<User> {
+pub async fn login(email: String, password: String) -> Option<User> {
+    let user = match User::get_row(email).await {
+        Ok(a) => a,
+        Err(_) => return None,
+    };
+
+    match verify_password(password, user.password.as_str()) {
+        Ok(_) => return Some(user),
+        Err(_) => return None,
+    }
+}
+
+pub async fn signup(email: String, password: String) -> Option<User> {
     match zxcvbn(&password, &[email.as_str()]) {
         Ok(entropy) => {
             if entropy.score() >= 3 {
@@ -38,6 +51,23 @@ pub fn signup(email: String, password: String) -> Option<User> {
         Err(e) => {
             println!("Error: {e}");
         }
+    }
+
+    None
+}
+
+pub async fn update_bal(email: String, password: String, change: i64) -> Option<User> {
+    let user = match login(email, password).await {
+        Some(a) => a,
+        None => return None,
+    };
+
+    match user
+        .update_db(TableFields::Balance, user.balance + change)
+        .await
+    {
+        Ok(_) => {}
+        Err(_) => return None,
     }
 
     None
