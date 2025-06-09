@@ -5,20 +5,19 @@ use serde_json::Value;
 pub enum WebQuery {
     Login,
     Signup,
-    UpdateBal,
+    UpdateBal(i64),
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct WebInput {
     pub function: WebQuery,
     pub email: String,
-    pub apikey: String,
-    pub data: Value,
+    pub password: String,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct WebOutput {
-    pub user: User,
+    pub user: Option<User>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -48,4 +47,10 @@ pub struct User {
     pub password: String,
     pub apikey: String,
     pub balance: i64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum FailOrSucc {
+    Failure(String),
+    Success,
 }
