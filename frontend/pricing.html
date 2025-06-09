@@ -5,9 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Pricing - OneLLM</title>
         <link rel="stylesheet" href="assets/css/main.css" />
-
-        <!-- Add any additional CSS files specific to this page -->
-        <!-- <link rel="stylesheet" href="../assets/css/your-custom-page.css" /> -->
+        <link rel="stylesheet" href="assets/css/pricing.css" />
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -17,12 +15,11 @@
         <header>
             <div class="container">
                 <nav>
-                    <a href="../index.html" class="logo">OneLLM</a>
+                    <a href="/" class="logo">OneLLM</a>
                     <div class="nav-links">
-                        <a href="index.html">Home</a>
+                        <a href="/">Home</a>
                         <a href="docs.html">Documentation</a>
-                        <a href="pricing.html">Pricing</a>
-                        <!-- Add class="active" to current page link -->
+                        <a href="pricing.html" class="active">Pricing</a>
                         <a href="dashboard.html">Dashboard</a>
                     </div>
                     <div class="auth-buttons">
@@ -38,15 +35,142 @@
         <!-- Main Content Section -->
         <section class="page-header">
             <div class="container">
-                <h1>Your Page Title</h1>
-                <p>Your page description goes here.</p>
+                <h1>Transparent Pricing</h1>
+                <p>Access all leading AI models through our unified API with simple, predictable pricing</p>
             </div>
         </section>
 
         <section class="content-section">
             <div class="container">
-                <!-- Your page content goes here -->
-                <p>This is where your main content will go.</p>
+                <div class="provider-section">
+                    <div class="provider-header">
+                        <div class="provider-icon"><i class="fas fa-robot"></i></div>
+                        <h2 class="provider-title">OpenAI Models</h2>
+                    </div>
+                    <p>Access OpenAI's powerful models through our unified API with the following pricing:</p>
+                    <div class="pricing-container">
+                        <div class="pricing-card">
+                            <div class="model-name">GPT-4-1</div>
+                            <div class="price">$11.00 <span class="price-unit">per 1M tokens</span></div>
+                            <p>OpenAI's flagship model with advanced reasoning capabilities</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">GPT-4-1 Mini</div>
+                            <div class="price">$2.50 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Smaller, more efficient version of GPT-4-1</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">GPT-4-1 Nano</div>
+                            <div class="price">$0.60 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Lightweight version optimized for efficiency</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">GPT-O3</div>
+                            <div class="price">$50.00 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Premium model with exceptional capabilities</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">GPT-O4 Mini</div>
+                            <div class="price">$6.00 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Compact version of the premium O-series</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="provider-section">
+                    <div class="provider-header">
+                        <div class="provider-icon"><i class="fas fa-comment-dots"></i></div>
+                        <h2 class="provider-title">Claude Models</h2>
+                    </div>
+                    <p>Anthropic's Claude models offer exceptional conversation abilities:</p>
+                    <div class="pricing-container">
+                        <div class="pricing-card">
+                            <div class="model-name">Claude Opus 4</div>
+                            <div class="price">$91.00 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Anthropic's most capable model for complex tasks</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">Claude Sonnet 4</div>
+                            <div class="price">$19.00 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Balanced performance for most applications</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">Claude Haiku 3.5</div>
+                            <div class="price">$5.00 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Fast and efficient for everyday tasks</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">Claude Opus 3</div>
+                            <div class="price">$91.00 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Previous generation flagship model</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">Claude Sonnet 3.7</div>
+                            <div class="price">$18.50 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Versatile model for a wide range of applications</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">Claude Haiku 3</div>
+                            <div class="price">$2.00 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Lightweight model for quick responses</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="provider-section">
+                    <div class="provider-header">
+                        <div class="provider-icon"><i class="fas fa-search"></i></div>
+                        <h2 class="provider-title">DeepSeek Models</h2>
+                    </div>
+                    <p>DeepSeek's powerful models for specialized tasks:</p>
+                    <div class="pricing-container">
+                        <div class="pricing-card">
+                            <div class="model-name">DeepSeek V3</div>
+                            <div class="price">$1.50 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Versatile chat model for general applications</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">DeepSeek R1</div>
+                            <div class="price">$3.00 <span class="price-unit">per 1M tokens</span></div>
+                            <p>Specialized reasoning model for complex problems</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="provider-section">
+                    <div class="provider-header">
+                        <div class="provider-icon"><i class="fas fa-gem"></i></div>
+                        <h2 class="provider-title">Gemini Models</h2>
+                    </div>
+                    <p>Google's Gemini models offer cutting-edge capabilities:</p>
+                    <div class="pricing-container">
+                        <div class="pricing-card">
+                            <div class="model-name">Gemini 2.5 Flash Preview</div>
+                            <div class="price">Contact for pricing</div>
+                            <p>Fast and efficient model for quick responses</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">Gemini 2.5 Pro Preview</div>
+                            <div class="price">Contact for pricing</div>
+                            <p>Advanced capabilities for complex tasks</p>
+                        </div>
+                        <div class="pricing-card">
+                            <div class="model-name">Gemini 2.5 Flash Native Audio</div>
+                            <div class="price">Contact for pricing</div>
+                            <p>Specialized for audio processing tasks</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="container">
+                <div class="cta-card">
+                    <h2>Ready to get started?</h2>
+                    <p>Sign up now and get access to all these models through our unified API.</p>
+                    <a href="signup.html" class="btn btn-primary">Create Free Account</a>
+                </div>
             </div>
         </section>
 
@@ -74,8 +198,6 @@
                 <div class="footer-bottom"></div>
             </div>
         </footer>
-        <script src="../assets/js/main.js"></script>
-        <!-- Add any additional JS files specific to this page -->
-        <!-- <script src="../assets/js/your-custom-page.js"></script> -->
+        <script src="assets/js/main.js"></script>
     </body>
 </html>
