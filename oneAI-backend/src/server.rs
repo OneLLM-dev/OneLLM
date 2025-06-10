@@ -21,7 +21,7 @@ use crate::utils::*;
 #[allow(unused)]
 pub async fn server() {
     let app = Router::new()
-        .fallback_service(ServeDir::new("oneAI-backend/frontend"))
+        .fallback_service(ServeDir::new("../OneLLM-Website/"))
         .route("/api", get(handle_api))
         .route("/post-backend", get(handle_post_website));
     let ipaddr = "0.0.0.0:3000";
