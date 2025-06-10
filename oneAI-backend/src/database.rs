@@ -101,7 +101,9 @@ impl User {
 
         let query = "INSERT INTO users (email, password, apikey, balance) VALUES ($1, $2, $3, $4);";
 
-        let hashed_user = signup(self.email.clone(), self.password.clone()).unwrap();
+        let hashed_user = signup(self.email.clone(), self.password.clone())
+            .await
+            .unwrap();
 
         sqlx::query(query)
             .bind(&hashed_user.email)
