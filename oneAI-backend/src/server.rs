@@ -21,7 +21,7 @@ use crate::utils::*;
 #[allow(unused)]
 pub async fn server() {
     let app = Router::new()
-        .fallback_service(ServeDir::new("frontend"))
+        .fallback_service(ServeDir::new("oneAI-backend/frontend"))
         .route("/api", get(handle_api))
         .route("/post-backend", get(handle_post_website));
     let ipaddr = "0.0.0.0:3000";
@@ -75,9 +75,6 @@ pub async fn handle_api(headers: HeaderMap, Json(payload): Json<Input>) -> Json<
         }
     };
 
-    if user.apikey != apikey {
-        return unauthorised_apikey();
-    }
 
     let _: Data = match serde_json::from_value::<Value>(payload.data.clone()) {
         Ok(_) => Data {

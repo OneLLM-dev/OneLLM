@@ -63,7 +63,7 @@ pub async fn update_bal(email: String, password: String, change: i64) -> Option<
     };
 
     match user
-        .update_db(TableFields::Balance, user.balance + change)
+        .update_db(TableFields::Balance, &(user.balance + change).to_string())
         .await
     {
         Ok(_) => {}
