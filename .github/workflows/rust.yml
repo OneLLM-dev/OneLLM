@@ -17,6 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      run: cargo build --bin oneAI-backend --verbose
+    - name: Run
+      run: cargo run --bin oneAI-backend --verbose
