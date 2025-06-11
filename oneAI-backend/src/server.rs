@@ -1,4 +1,4 @@
-use std::error::Error;
+// use std::error::Error;
 
 #[allow(unused)]
 use axum::{
@@ -14,7 +14,7 @@ use tower_http::services::ServeDir;
 
 use serde_json::{Value, json};
 
-use crate::auth::{self, login, update_bal};
+use crate::auth::{self, update_bal};
 use crate::requests::Input;
 use crate::utils::*;
 
@@ -23,7 +23,8 @@ pub async fn server() {
     let app = Router::new()
         .fallback_service(ServeDir::new("../OneLLM-Website/"))
         .route("/api", get(handle_api))
-        .route("/post-backend", get(handle_post_website));
+        .route("/post-backend", post(handle_post_website))
+        .route("/get-backend", get(handle_get_website));
     let ipaddr = "0.0.0.0:3000";
     let listener = tokio::net::TcpListener::bind(ipaddr).await.unwrap();
 
@@ -75,7 +76,6 @@ pub async fn handle_api(headers: HeaderMap, Json(payload): Json<Input>) -> Json<
         }
     };
 
-
     let _: Data = match serde_json::from_value::<Value>(payload.data.clone()) {
         Ok(_) => Data {
             max_tokens: user.balance as u128,
@@ -116,18 +116,18 @@ pub async fn signup_and_update_db(
         Err(_) => return Ok(None),
     };
 
-    Ok(None)
+    Ok(Some(user))
 }
 
-#[derive(Debug)]
-struct AuthError(String);
-impl Error for AuthError {}
+// #[derive(Debug)]
+// struct AuthError(String);
+// impl Error for AuthError {}
 
-impl std::fmt::Display for AuthError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Update error: {}", self.0)
-    }
-}
+// impl std::fmt::Display for AuthError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         write!(f, "Update error: {}", self.0)
+//     }
+// }
 
 pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc> {
     match query.function {
@@ -175,29 +175,35 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
 
 pub async fn handle_get_website(Json(query): Json<WebInput>) -> Json<WebOutput> {
     match query.function {
-        WebQuery::Signup => {}
-        _ => {}
-    }
-
-    Json(WebOutput {
-        user: Some(User {
-            email: String::new(),
-            password: String::new(),
-            apikey: String::new(),
-            balance: 0,
+        WebQuery::Login => {
+            let user = match auth::login(query.email, query.password).await {
+                Some(u) => u,
+                None => {
+                    return Json(WebOutput { user: None });
+                }
+            };
+            return Json(WebOutput { user: Some(user) });
+        }
+        _ => Json(WebOutput {
+            user: Some(User {
+                email: String::new(),
+                password: String::new(),
+                apikey: String::new(),
+                balance: 0,
+            }),
         }),
-    })
+    }
 }
 
 /*------Unauthorised String returning functions------*/
 
-fn unauthorised_apikey() -> Json<Output> {
-    let response = Output {
-        code: 401,
-        output: json!("Unauthorized"),
-    };
-    return Json(response);
-}
+// fn unauthorised_apikey() -> Json<Output> {
+//     let response = Output {
+//         code: 401,
+//         output: json!("Unauthorized"),
+//     };
+//     return Json(response);
+// }
 
 fn unauthorised_field_provided() -> Json<Output> {
     let response = Output {

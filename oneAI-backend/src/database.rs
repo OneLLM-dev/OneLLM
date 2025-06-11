@@ -3,7 +3,7 @@ use std::error::Error;
 
 use password_auth::verify_password;
 
-use crate::auth::{self, signup};
+use crate::auth::{self};
 use crate::utils::*;
 
 #[derive(Debug)]
@@ -101,15 +101,11 @@ impl User {
 
         let query = "INSERT INTO users (email, password, apikey, balance) VALUES ($1, $2, $3, $4);";
 
-        let hashed_user = signup(self.email.clone(), self.password.clone())
-            .await
-            .unwrap();
-
         sqlx::query(query)
-            .bind(&hashed_user.email)
-            .bind(&hashed_user.password)
-            .bind(&hashed_user.apikey)
-            .bind(hashed_user.balance)
+            .bind(&self.email)
+            .bind(&self.password)
+            .bind(&self.apikey)
+            .bind(self.balance)
             .execute(&pool)
             .await?;
 
@@ -147,18 +143,18 @@ impl User {
             }
         }
 
-        let temp_struct = auth::hash_user(temp_user);
+        auth::hash_user(&mut temp_user);
 
         let value_to_bind = match field {
-            TableFields::Email => &temp_struct.email,
-            TableFields::Password => &temp_struct.password,
-            TableFields::Apikey => &temp_struct.apikey,
-            TableFields::Balance => &temp_struct.balance.to_string(),
+            TableFields::Email => &temp_user.email,
+            TableFields::Password => &temp_user.password,
+            TableFields::Apikey => &temp_user.apikey,
+            TableFields::Balance => &temp_user.balance.to_string(),
         };
 
         sqlx::query(&query)
             .bind(value_to_bind)
-            .bind(temp_struct.email.clone())
+            .bind(temp_user.email.clone())
             .execute(&pool)
             .await?;
 

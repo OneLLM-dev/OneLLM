@@ -1,23 +1,9 @@
-use argon2::{
-    Argon2,
-    password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
-};
-
-use password_auth::verify_password;
+use password_auth::{generate_hash, verify_password};
 use rand::Rng;
 
 use zxcvbn::zxcvbn;
 
 use crate::utils::*;
-
-pub fn hasher(input: &str) -> String {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    argon2
-        .hash_password(input.as_bytes(), &salt)
-        .expect("Failed to hash password")
-        .to_string()
-}
 
 pub async fn login(email: String, password: String) -> Option<User> {
     let user = match User::get_row(email).await {
@@ -26,7 +12,9 @@ pub async fn login(email: String, password: String) -> Option<User> {
     };
 
     match verify_password(password, user.password.as_str()) {
-        Ok(_) => return Some(user),
+        Ok(_) => {
+            return Some(user);
+        }
         Err(_) => return None,
     }
 }
@@ -36,14 +24,15 @@ pub async fn signup(email: String, password: String) -> Option<User> {
         Ok(entropy) => {
             if entropy.score() >= 3 {
                 let apikey = generate_api();
-                let user = User {
+                let mut user = User {
                     email,
                     password,
                     apikey,
                     balance: 0,
                 };
+                hash_user(&mut user);
 
-                return Some(hash_user(user));
+                return Some(user);
             } else {
                 println!("Password isn't strong enough");
             }
@@ -73,13 +62,8 @@ pub async fn update_bal(email: String, password: String, change: i64) -> Option<
     None
 }
 
-pub fn hash_user(user: User) -> User {
-    User {
-        email: user.email,
-        password: hasher(user.password.as_str()),
-        apikey: generate_api(),
-        balance: 0,
-    }
+pub fn hash_user(user: &mut User) {
+    user.password = generate_hash(&user.password)
 }
 
 pub fn generate_api() -> String {
