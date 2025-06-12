@@ -1,4 +1,5 @@
 // use std::error::Error;
+use tower_http::cors::{Any, CorsLayer};
 
 #[allow(unused)]
 use axum::{
@@ -20,11 +21,17 @@ use crate::utils::*;
 
 #[allow(unused)]
 pub async fn server() {
+    let cors = CorsLayer::new()
+        .allow_origin(Any) // Allow all origins (good for development)
+        .allow_methods(Any) // Allow all HTTP methods (GET, POST, etc.)
+        .allow_headers(Any);
+
     let app = Router::new()
         .fallback_service(ServeDir::new("../OneLLM-Website/"))
         .route("/api", get(handle_api))
         .route("/post-backend", post(handle_post_website))
-        .route("/get-backend", get(handle_get_website));
+        .route("/get-backend", get(handle_get_website))
+        .layer(cors);
     let ipaddr = "0.0.0.0:3000";
     let listener = tokio::net::TcpListener::bind(ipaddr).await.unwrap();
 
