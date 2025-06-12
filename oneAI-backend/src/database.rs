@@ -1,4 +1,6 @@
 // use sqlx::{Pool, Postgres, Row};
+use dotenv::dotenv;
+use std::env;
 use std::error::Error;
 
 use password_auth::verify_password;
@@ -18,8 +20,9 @@ impl std::fmt::Display for MissingUser {
 
 impl User {
     pub async fn get_row_api(apikey: String) -> Result<User, Box<dyn Error>> {
-        let url = "postgres://REDACTED";
-        let pool = sqlx::postgres::PgPool::connect(url).await?;
+        dotenv().ok();
+        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
         let exists: bool =
             sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE apikey = $1)")
@@ -56,8 +59,9 @@ impl User {
         })
     }
     pub async fn get_row(email: String) -> Result<User, Box<dyn Error>> {
-        let url = "postgres://REDACTED";
-        let pool = sqlx::postgres::PgPool::connect(url).await?;
+        dotenv().ok();
+        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
         let exists: bool =
             sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)")
@@ -96,8 +100,9 @@ impl User {
 
     #[allow(unused)]
     pub async fn new_user(&self) -> Result<(), Box<dyn Error>> {
-        let url = "postgres://REDACTED";
-        let pool = sqlx::postgres::PgPool::connect(url).await?;
+        dotenv().ok();
+        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
         let query = "INSERT INTO users (email, password, apikey, balance) VALUES ($1, $2, $3, $4);";
 
@@ -118,8 +123,9 @@ impl User {
         field: TableFields,
         new_value: &str,
     ) -> Result<(), Box<dyn Error>> {
-        let url = "postgres://REDACTED";
-        let pool = sqlx::postgres::PgPool::connect(url).await?;
+        dotenv().ok();
+        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
         let field_str = field.match_field();
 
@@ -162,8 +168,9 @@ impl User {
     }
     #[allow(unused)]
     pub async fn login_user(username: String, password: String) -> Result<(), Box<dyn Error>> {
-        let url = "postgres://REDACTED";
-        let pool = sqlx::postgres::PgPool::connect(url).await?;
+        dotenv().ok();
+        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
         let exists: bool =
             sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)")
@@ -191,8 +198,9 @@ impl User {
 }
 
 pub async fn init_db() -> Result<(), Box<dyn Error>> {
-    let url = "postgres://REDACTED";
-    let pool = sqlx::postgres::PgPool::connect(url).await?;
+    dotenv().ok();
+    let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
+    let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
     sqlx::migrate!("./migrations").run(&pool).await?;
 
