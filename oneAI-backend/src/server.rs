@@ -180,7 +180,7 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
     // Ok(())
 }
 
-pub async fn handle_get_website(Json(query): Json<WebInput>) -> Json<WebOutput> {
+pub async fn handle_get_website(Query(query): Query<WebInput>) -> Json<WebOutput> {
     match query.function {
         WebQuery::Login => {
             let user = match auth::login(query.email, query.password).await {
