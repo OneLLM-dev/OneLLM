@@ -1,4 +1,4 @@
 [workspace]
 resolver = "3"
-members = ["oneAI-backend", "testing"]
+members = ["oneAI-backend"]
 default-run = "oneAI-backend"
