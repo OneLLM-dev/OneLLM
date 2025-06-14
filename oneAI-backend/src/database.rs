@@ -5,7 +5,7 @@ use std::error::Error;
 
 use password_auth::verify_password;
 
-use crate::auth::{self};
+use crate::auth::{self, generate_api, signup};
 use crate::utils::*;
 
 #[derive(Debug)]
@@ -19,105 +19,103 @@ impl std::fmt::Display for MissingUser {
 }
 
 impl User {
+    pub async fn generate_apikey(&self) -> Result<String, Box<dyn Error>> {
+        dotenv().ok();
+        let url = env::var("POSTGRES")?;
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+        // Count how many keys this user already has
+        let count = sqlx::query!(
+            "SELECT COUNT(*) as count FROM api_keys WHERE user_id = (SELECT id FROM users WHERE email = $1)",
+            self.email
+        )
+        .fetch_one(&pool)
+        .await?
+        .count
+        .unwrap_or(0);
+
+        if count >= 10 {
+            return Err("You have reached the maximum of 10 API keys.".into());
+        }
+
+        // Generate a new random API key
+
+        let new_key = generate_api();
+        sqlx::query!(
+            "INSERT INTO api_keys (user_id, key) VALUES ((SELECT id FROM users WHERE email = $1), $2)",
+            self.email,
+            new_key
+        )
+        .execute(&pool)
+        .await?;
+
+        Ok(new_key)
+    }
     pub async fn get_row_api(apikey: String) -> Result<User, Box<dyn Error>> {
         dotenv().ok();
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let exists: bool =
-            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE apikey = $1)")
-                .bind(apikey.clone())
-                .fetch_one(&pool)
-                .await?;
+        let row = sqlx::query!(
+            "SELECT u.email, u.password, u.balance FROM users u \
+             JOIN api_keys a ON u.id = a.user_id WHERE a.key = $1",
+            apikey
+        )
+        .fetch_optional(&pool)
+        .await?;
 
-        if !exists {
-            return Err(Box::new(MissingUser("No such user was found".to_string())));
+        if let Some(record) = row {
+            Ok(Self {
+                email: record.email,
+                password: record.password,
+                balance: record.balance,
+            })
+        } else {
+            Err(Box::new(MissingUser("No such user was found".to_string())))
         }
-
-        let email: String = sqlx::query_scalar("SELECT email FROM users WHERE apikey = $1")
-            .bind(apikey.clone())
-            .fetch_one(&pool)
-            .await?;
-
-        let password: String = sqlx::query_scalar("SELECT password FROM users WHERE apikey = $1")
-            .bind(apikey.clone())
-            .fetch_one(&pool)
-            .await?;
-
-        let balance_str: String = sqlx::query_scalar("SELECT balance FROM users WHERE apikey = $1")
-            .bind(apikey.clone())
-            .fetch_one(&pool)
-            .await?;
-
-        let balance: i64 = balance_str.parse()?;
-
-        Ok(Self {
-            email,
-            password,
-            apikey,
-            balance,
-        })
     }
+
     pub async fn get_row(email: String) -> Result<User, Box<dyn Error>> {
         dotenv().ok();
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let exists: bool =
-            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)")
-                .bind(email.clone())
-                .fetch_one(&pool)
-                .await?;
+        let row = sqlx::query!(
+            "SELECT u.password, u.balance, a.key FROM users u \
+             JOIN api_keys a ON u.id = a.user_id WHERE u.email = $1",
+            email
+        )
+        .fetch_optional(&pool)
+        .await?;
 
-        if !exists {
-            return Err(Box::new(MissingUser("No such user was found".to_string())));
+        if let Some(record) = row {
+            Ok(Self {
+                email,
+                password: record.password,
+                balance: record.balance,
+            })
+        } else {
+            Err(Box::new(MissingUser("No such user was found".to_string())))
         }
-
-        let apikey: String = sqlx::query_scalar("SELECT apikey FROM users WHERE email = $1")
-            .bind(email.clone())
-            .fetch_one(&pool)
-            .await?;
-
-        let password: String = sqlx::query_scalar("SELECT password FROM users WHERE email = $1")
-            .bind(email.clone())
-            .fetch_one(&pool)
-            .await?;
-
-        let balance_str: String = sqlx::query_scalar("SELECT balance FROM users WHERE email = $1")
-            .bind(email.clone())
-            .fetch_one(&pool)
-            .await?;
-
-        let balance: i64 = balance_str.parse()?;
-
-        Ok(Self {
-            email,
-            password,
-            apikey,
-            balance,
-        })
     }
 
-    #[allow(unused)]
     pub async fn new_user(&self) -> Result<(), Box<dyn Error>> {
         dotenv().ok();
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let query = "INSERT INTO users (email, password, apikey, balance) VALUES ($1, $2, $3, $4);";
-
-        sqlx::query(query)
-            .bind(&self.email)
-            .bind(&self.password)
-            .bind(&self.apikey)
-            .bind(self.balance)
-            .execute(&pool)
-            .await?;
+        let user_row = sqlx::query!(
+            "INSERT INTO users (email, password, balance) VALUES ($1, $2, $3) RETURNING id",
+            self.email,
+            self.password,
+            self.balance
+        )
+        .fetch_one(&pool)
+        .await?;
 
         Ok(())
     }
 
-    #[allow(unused)]
     pub async fn update_db(
         &self,
         field: TableFields,
@@ -127,21 +125,11 @@ impl User {
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let field_str = field.match_field();
-
-        let query = format!("UPDATE users SET {} = $1 WHERE email = $2", field_str);
-
-        let mut temp_user = User {
-            email: self.email.clone(),
-            password: self.password.clone(),
-            apikey: self.apikey.clone(),
-            balance: self.balance,
-        };
+        let mut temp_user = self.clone();
 
         match field {
             TableFields::Email => temp_user.email = new_value.to_string(),
             TableFields::Password => temp_user.password = new_value.to_string(),
-            TableFields::Apikey => temp_user.apikey = new_value.to_string(),
             TableFields::Balance => {
                 temp_user.balance = new_value
                     .parse()
@@ -151,52 +139,44 @@ impl User {
 
         auth::hash_user(&mut temp_user);
 
-        let value_to_bind = match field {
-            TableFields::Email => &temp_user.email,
-            TableFields::Password => &temp_user.password,
-            TableFields::Apikey => &temp_user.apikey,
-            TableFields::Balance => &temp_user.balance.to_string(),
-        };
+        match field {
+            TableFields::Email | TableFields::Password | TableFields::Balance => {
+                let field_str = field.match_field();
+                let query = format!("UPDATE users SET {} = $1 WHERE email = $2", field_str);
 
-        sqlx::query(&query)
-            .bind(value_to_bind)
-            .bind(temp_user.email.clone())
-            .execute(&pool)
-            .await?;
+                let balance = temp_user.balance.to_string();
+                sqlx::query(&query)
+                    .bind(match field {
+                        TableFields::Email => &temp_user.email,
+                        TableFields::Password => &temp_user.password,
+                        TableFields::Balance => &balance,
+                    })
+                    .bind(&self.email)
+                    .execute(&pool)
+                    .await?;
+            }
+        }
 
         Ok(())
     }
-    #[allow(unused)]
-    pub async fn login_user(username: String, password: String) -> Result<(), Box<dyn Error>> {
+
+    pub async fn login_user(email: String, password: String) -> Result<(), Box<dyn Error>> {
         dotenv().ok();
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let exists: bool =
-            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)")
-                .bind(username.clone())
-                .fetch_one(&pool)
-                .await?;
+        let row = sqlx::query!("SELECT password FROM users WHERE email = $1", email)
+            .fetch_optional(&pool)
+            .await?;
 
-        if !exists {
-            return Err(Box::new(MissingUser("No such user was found".to_string())));
+        match row {
+            Some(record) => {
+                return verify_password(password, &record.password).map_err(Into::into);
+            }
+            None => Err(Box::new(MissingUser("No such user was found".to_string()))),
         }
-
-        let password_hash: String =
-            sqlx::query_scalar("SELECT password FROM users WHERE username = $1")
-                .bind(username.clone())
-                .fetch_one(&pool)
-                .await?;
-
-        let result = match verify_password(password, password_hash.as_str()) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e.into()),
-        };
-
-        result
     }
 }
-
 pub async fn init_db() -> Result<(), Box<dyn Error>> {
     dotenv().ok();
     let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
@@ -212,7 +192,6 @@ impl TableFields {
         match self {
             TableFields::Email => "email",
             TableFields::Password => "password",
-            TableFields::Apikey => "apikey",
             TableFields::Balance => "balance",
         }
     }
