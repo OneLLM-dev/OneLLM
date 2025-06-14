@@ -1,8 +1,6 @@
 use password_auth::{generate_hash, verify_password};
 use rand::Rng;
 
-use zxcvbn::zxcvbn;
-
 use crate::utils::*;
 
 pub async fn login(email: String, password: String) -> Option<User> {
@@ -20,29 +18,14 @@ pub async fn login(email: String, password: String) -> Option<User> {
 }
 
 pub async fn signup(email: String, password: String) -> Option<User> {
-    match zxcvbn(&password, &[email.as_str()]) {
-        Ok(entropy) => {
-            if entropy.score() >= 3 {
-                let apikey = generate_api();
-                let mut user = User {
-                    email,
-                    password,
-                    apikey,
-                    balance: 0,
-                };
-                hash_user(&mut user);
+    let mut user = User {
+        email,
+        password,
+        balance: 0,
+    };
+    hash_user(&mut user);
 
-                return Some(user);
-            } else {
-                println!("Password isn't strong enough");
-            }
-        }
-        Err(e) => {
-            println!("Error: {e}");
-        }
-    }
-
-    None
+    Some(user)
 }
 
 pub async fn update_bal(email: String, password: String, change: i64) -> Option<User> {
@@ -52,7 +35,10 @@ pub async fn update_bal(email: String, password: String, change: i64) -> Option<
     };
 
     match user
-        .update_db(TableFields::Balance, &(user.balance + change).to_string())
+        .update_db(
+            TableFields::Balance,
+            &(user.balance + change as i32).to_string(),
+        )
         .await
     {
         Ok(_) => {}
@@ -60,6 +46,19 @@ pub async fn update_bal(email: String, password: String, change: i64) -> Option<
     }
 
     None
+}
+
+impl HiddenUser{
+    pub async fn from_user(user:&mut User) -> Self{
+        let email = user.clone().email;
+        let balance = user.balance;
+        drop(user.to_owned());
+
+        return Self {
+            email,
+            balance,
+        }
+    }
 }
 
 pub fn hash_user(user: &mut User) {
