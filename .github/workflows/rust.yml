@@ -8,7 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  DATABASE_URL: postgres://onellm:password@localhost:5432/OneLLM
+  DATABASE_URL: postgres://postgres:password@localhost:5432/OneLLM
 
 jobs:
   build:
@@ -17,6 +17,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Initialise database 
+      run: sudo systemctl start postgresql.service
     - name: Run tests from testing.rs 
       run: cargo test --bin oneAI-backend --verbose
     - name: Cargo check
