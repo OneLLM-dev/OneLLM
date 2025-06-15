@@ -179,22 +179,21 @@ impl User {
         Ok(())
     }
 
-    // pub async fn login_user(email: String, password: String) -> Result<(), Box<dyn Error>> {
-    // dotenv().ok();
-    // let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
-    // let pool = sqlx::postgres::PgPool::connect(&url).await?;
-    //
-    // let row = sqlx::query!("SELECT password FROM users WHERE email = $1", email)
-    // .fetch_optional(&pool)
-    // .await?;
-    //
-    // match row {
-    // Some(record) => {
-    // return verify_password(password, &record.password).map_err(Into::into);
-    // }
-    // None => Err(Box::new(MissingUser("No such user was found".to_string()))),
-    // }
-    // }
+    pub async fn delete_user(email: &str) -> Result<(), Box<dyn Error>> {
+        dotenv().ok();
+        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+        let result = sqlx::query!("DELETE FROM users WHERE email = $1", email)
+            .execute(&pool)
+            .await?;
+
+        if result.rows_affected() == 0 {
+            return Err(Box::new(MissingUser("User not found".into())));
+        }
+
+        Ok(())
+    }
 }
 pub async fn init_db() -> Result<(), Box<dyn Error>> {
     dotenv().ok();
