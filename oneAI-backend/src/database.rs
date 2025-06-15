@@ -1,5 +1,6 @@
 // use sqlx::{Pool, Postgres, Row};
 use dotenv::dotenv;
+use sqlx::Row;
 use std::env;
 use std::error::Error;
 
@@ -25,11 +26,9 @@ impl User {
         let url = env::var("POSTGRES")?;
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let deleted = sqlx::query!(
-        "DELETE FROM api_keys WHERE key = $1 AND user_id = (SELECT id FROM users WHERE email = $2)",
-        apikey,
-        email
-    )
+        let deleted = sqlx::query(
+        "DELETE FROM api_keys WHERE key = $1 AND user_id = (SELECT id FROM users WHERE email = $2)"
+    ).bind(apikey).bind(email)
     .execute(&pool)
     .await?;
 
@@ -48,14 +47,9 @@ impl User {
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
         // Count how many keys this user already has
-        let count = sqlx::query!(
+        let count = sqlx::query(
             "SELECT COUNT(*) as count FROM api_keys WHERE user_id = (SELECT id FROM users WHERE email = $1)",
-            self.email
-        )
-        .fetch_one(&pool)
-        .await?
-        .count
-        .unwrap_or(0);
+        ).bind(&self.email).fetch_all(&pool).await?.iter().count();
 
         if count >= 10 {
             return Err("You have reached the maximum of 10 API keys.".into());
@@ -64,11 +58,9 @@ impl User {
         // Generate a new random API key
 
         let new_key = generate_api();
-        sqlx::query!(
+        sqlx::query(
             "INSERT INTO api_keys (user_id, key) VALUES ((SELECT id FROM users WHERE email = $1), $2)",
-            self.email,
-            new_key
-        )
+        ).bind(&self.email).bind(&new_key)
         .execute(&pool)
         .await?;
 
@@ -81,19 +73,23 @@ impl User {
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let row = sqlx::query!(
+        let row = sqlx::query(
             "SELECT u.email, u.password, u.balance FROM users u \
              JOIN api_keys a ON u.id = a.user_id WHERE a.key = $1",
-            apikey
         )
+        .bind(apikey)
         .fetch_optional(&pool)
         .await?;
 
         if let Some(record) = row {
+            let email: String = record.try_get("email")?;
+            let password: String = record.try_get("password")?;
+            let balance: i32 = record.try_get("balance")?;
+
             Ok(Self {
-                email: record.email,
-                password: record.password,
-                balance: record.balance,
+                email,
+                password,
+                balance,
             })
         } else {
             Err(Box::new(MissingUser("No such user was found".to_string())))
@@ -107,19 +103,23 @@ impl User {
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let row = sqlx::query!(
+        let row = sqlx::query(
             "SELECT u.password, u.balance, a.key FROM users u \
-             JOIN api_keys a ON u.id = a.user_id WHERE u.email = $1",
-            email
+     JOIN api_keys a ON u.id = a.user_id WHERE u.email = $1",
         )
+        .bind(&email)
         .fetch_optional(&pool)
         .await?;
 
         if let Some(record) = row {
+            let password: String = record.try_get("password")?;
+            let balance: i32 = record.try_get("balance")?;
+            let _key: String = record.try_get("key")?; // if you want to use it
+
             Ok(Self {
                 email,
-                password: record.password,
-                balance: record.balance,
+                password,
+                balance,
             })
         } else {
             Err(Box::new(MissingUser("No such user was found".to_string())))
@@ -133,12 +133,12 @@ impl User {
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let _user_row = sqlx::query!(
+        let _user_row = sqlx::query(
             "INSERT INTO users (email, password, balance) VALUES ($1, $2, $3) RETURNING id",
-            self.email,
-            self.password,
-            self.balance
         )
+        .bind(&self.email)
+        .bind(&self.password)
+        .bind(self.balance)
         .fetch_one(&pool)
         .await?;
 
@@ -191,6 +191,7 @@ impl User {
         Ok(())
     }
 
+    #[allow(unused)]
     pub async fn delete_user(email: &str) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv::from_filename(".env.ci").ok();
@@ -201,7 +202,8 @@ impl User {
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let result = sqlx::query!("DELETE FROM users WHERE email = $1", email)
+        let result = sqlx::query("DELETE FROM users WHERE email = $1")
+            .bind(email)
             .execute(&pool)
             .await?;
 
