@@ -8,34 +8,43 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  DATABASE_URL: postgres://postgres:password@localhost:5432/OneLLM
-  POSTGRES: postgres://postgres:password@localhost:5432/OneLLM
-
+  DATABASE_URL: postgres://postgres:password@postgres:5432/OneLLM
+  POSTGRES: postgres://postgres:password@postgres:5432/OneLLM
 
 jobs:
-  services:
-      # Label used to access the service container
+  build:
+    runs-on: ubuntu-latest
+
+    services:
       postgres:
-        # Docker Hub image
         image: postgres
-        # Provide the password for postgres
         env:
           POSTGRES_PASSWORD: password
-        # Set health checks to wait until postgres has started
+          POSTGRES_DB: OneLLM
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-  build:
-
-    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Initialise database 
-      run: sudo systemctl start postgresql.service
-    - name: Run tests from testing.rs 
-      run: cargo test --bin oneAI-backend --verbose
-    - name: Cargo check
-      run: cargo check --bin oneAI-backend --verbose
+      - uses: actions/checkout@v4
+
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..10}; do
+            pg_isready -h postgres -p 5432 && break
+            echo "Waiting for PostgreSQL..."
+            sleep 3
+          done
+
+      - name: Run database migrations (if any)
+        run: cargo run --bin migrate || true
+
+      - name: Run tests from testing.rs 
+        run: cargo test --bin oneAI-backend --verbose
+
+      - name: Cargo check
+        run: cargo check --bin oneAI-backend --verbose
