@@ -31,6 +31,7 @@ pub async fn server() {
         .route("/api", get(handle_api))
         .route("/post-backend", post(handle_post_website))
         .route("/get-backend", get(handle_get_website))
+        .route("/apikey-commands", get(gen_apikey))
         .layer(cors);
     let ipaddr = "0.0.0.0:3000";
     let listener = tokio::net::TcpListener::bind(ipaddr).await.unwrap();
@@ -178,6 +179,21 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
     }
 
     // Ok(())
+}
+
+pub async fn gen_apikey(Query(query): Query<WebInput>) -> Json<FailOrSucc> {
+    let user = match auth::login(query.email, query.password).await {
+        Some(u) => u,
+        None => {
+            return Json(FailOrSucc::Failure("User not found".to_owned()));
+        }
+    };
+
+    user.generate_apikey()
+        .await
+        .expect("Error while trying to generate apikey");
+
+    return Json(FailOrSucc::Success);
 }
 
 pub async fn handle_get_website(Query(query): Query<WebInput>) -> Json<WebOutput> {

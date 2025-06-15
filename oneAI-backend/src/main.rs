@@ -3,8 +3,8 @@ mod database;
 mod pricing;
 mod requests;
 mod server;
-mod utils;
 mod testing;
+mod utils;
 
 use server::server;
 
