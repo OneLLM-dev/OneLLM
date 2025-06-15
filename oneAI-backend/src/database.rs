@@ -19,7 +19,7 @@ impl std::fmt::Display for MissingUser {
 impl User {
     #[allow(unused)]
     pub async fn delete_apikey(email: &str, apikey: &str) -> Result<(), Box<dyn Error>> {
-        if std::env::var("CI").is_ok() {
+        if std::env::var("CI").is_err() {
             dotenv::from_filename(".env.ci").ok();
         } else {
             dotenv().ok();
@@ -43,7 +43,7 @@ impl User {
     }
 
     pub async fn generate_apikey(&self) -> Result<String, Box<dyn Error>> {
-        if std::env::var("CI").is_ok() {
+        if std::env::var("CI").is_err() {
             dotenv::from_filename(".env.ci").ok();
         } else {
             dotenv().ok();
@@ -79,7 +79,7 @@ impl User {
         Ok(new_key)
     }
     pub async fn get_row_api(apikey: String) -> Result<User, Box<dyn Error>> {
-        if std::env::var("CI").is_ok() {
+        if std::env::var("CI").is_err() {
             dotenv::from_filename(".env.ci").ok();
         } else {
             dotenv().ok();
@@ -107,7 +107,7 @@ impl User {
     }
 
     pub async fn get_row(email: String) -> Result<User, Box<dyn Error>> {
-        if std::env::var("CI").is_ok() {
+        if std::env::var("CI").is_err() {
             dotenv::from_filename(".env.ci").ok();
         } else {
             dotenv().ok();
@@ -135,7 +135,7 @@ impl User {
     }
 
     pub async fn new_user(&self) -> Result<(), Box<dyn Error>> {
-        if std::env::var("CI").is_ok() {
+        if std::env::var("CI").is_err() {
             dotenv::from_filename(".env.ci").ok();
         } else {
             dotenv().ok();
@@ -160,7 +160,7 @@ impl User {
         field: TableFields,
         new_value: &str,
     ) -> Result<(), Box<dyn Error>> {
-        if std::env::var("CI").is_ok() {
+        if std::env::var("CI").is_err() {
             dotenv::from_filename(".env.ci").ok();
         } else {
             dotenv().ok();
@@ -204,7 +204,7 @@ impl User {
     }
 
     pub async fn delete_user(email: &str) -> Result<(), Box<dyn Error>> {
-        if std::env::var("CI").is_ok() {
+        if std::env::var("CI").is_err() {
             dotenv::from_filename(".env.ci").ok();
         } else {
             dotenv().ok();
@@ -225,7 +225,11 @@ impl User {
     }
 }
 pub async fn init_db() -> Result<(), Box<dyn Error>> {
-    dotenv().ok();
+    if std::env::var("CI").is_err() {
+        dotenv::from_filename(".env.ci").ok();
+    } else {
+        dotenv().ok();
+    }
     let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
     let pool = sqlx::postgres::PgPool::connect(&url).await?;
 

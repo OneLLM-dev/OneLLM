@@ -3,8 +3,6 @@ name: Rust
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -45,7 +43,7 @@ jobs:
         run: cargo run --bin migrate || true
 
       - name: Run tests from testing.rs 
-        run: cargo test --bin oneAI-backend --verbose
+        run: cargo test --bin oneAI-backend 
 
       - name: Cargo check
-        run: cargo check --bin oneAI-backend --verbose
+        run: cargo check --bin oneAI-backend 
