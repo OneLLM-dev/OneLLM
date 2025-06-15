@@ -3,9 +3,7 @@ use dotenv::dotenv;
 use std::env;
 use std::error::Error;
 
-use password_auth::verify_password;
-
-use crate::auth::{self, generate_api, signup};
+use crate::auth::{self, generate_api};
 use crate::utils::*;
 
 #[derive(Debug)]
@@ -19,6 +17,27 @@ impl std::fmt::Display for MissingUser {
 }
 
 impl User {
+    #[allow(unused)]
+    pub async fn delete_apikey(email: &str, apikey: &str) -> Result<(), Box<dyn Error>> {
+        dotenv().ok();
+        let url = env::var("POSTGRES")?;
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+        let deleted = sqlx::query!(
+        "DELETE FROM api_keys WHERE key = $1 AND user_id = (SELECT id FROM users WHERE email = $2)",
+        apikey,
+        email
+    )
+    .execute(&pool)
+    .await?;
+
+        if deleted.rows_affected() == 0 {
+            return Err("API key not found or does not belong to the user.".into());
+        }
+
+        Ok(())
+    }
+
     pub async fn generate_apikey(&self) -> Result<String, Box<dyn Error>> {
         dotenv().ok();
         let url = env::var("POSTGRES")?;
@@ -104,7 +123,7 @@ impl User {
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let user_row = sqlx::query!(
+        let _user_row = sqlx::query!(
             "INSERT INTO users (email, password, balance) VALUES ($1, $2, $3) RETURNING id",
             self.email,
             self.password,
@@ -160,22 +179,22 @@ impl User {
         Ok(())
     }
 
-    pub async fn login_user(email: String, password: String) -> Result<(), Box<dyn Error>> {
-        dotenv().ok();
-        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
-
-        let row = sqlx::query!("SELECT password FROM users WHERE email = $1", email)
-            .fetch_optional(&pool)
-            .await?;
-
-        match row {
-            Some(record) => {
-                return verify_password(password, &record.password).map_err(Into::into);
-            }
-            None => Err(Box::new(MissingUser("No such user was found".to_string()))),
-        }
-    }
+    // pub async fn login_user(email: String, password: String) -> Result<(), Box<dyn Error>> {
+    // dotenv().ok();
+    // let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
+    // let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    //
+    // let row = sqlx::query!("SELECT password FROM users WHERE email = $1", email)
+    // .fetch_optional(&pool)
+    // .await?;
+    //
+    // match row {
+    // Some(record) => {
+    // return verify_password(password, &record.password).map_err(Into::into);
+    // }
+    // None => Err(Box::new(MissingUser("No such user was found".to_string()))),
+    // }
+    // }
 }
 pub async fn init_db() -> Result<(), Box<dyn Error>> {
     dotenv().ok();
