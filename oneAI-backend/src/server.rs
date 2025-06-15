@@ -183,22 +183,17 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
 pub async fn handle_get_website(Query(query): Query<WebInput>) -> Json<WebOutput> {
     match query.function {
         WebQuery::Login => {
-            let user = match auth::login(query.email, query.password).await {
+            let mut user = match auth::login(query.email, query.password).await {
                 Some(u) => u,
                 None => {
                     return Json(WebOutput { user: None });
                 }
             };
-            return Json(WebOutput { user: Some(user) });
+            return Json(WebOutput {
+                user: Some(HiddenUser::from_user(&mut user).await),
+            });
         }
-        _ => Json(WebOutput {
-            user: Some(User {
-                email: String::new(),
-                password: String::new(),
-                apikey: String::new(),
-                balance: 0,
-            }),
-        }),
+        _ => Json(WebOutput { user: None }),
     }
 }
 
