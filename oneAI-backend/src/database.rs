@@ -20,8 +20,6 @@ impl User {
     #[allow(unused)]
     pub async fn delete_apikey(email: &str, apikey: &str) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
-            dotenv::from_filename(".env.ci").ok();
-        } else {
             dotenv().ok();
         }
         let url = env::var("POSTGRES")?;
@@ -44,8 +42,6 @@ impl User {
 
     pub async fn generate_apikey(&self) -> Result<String, Box<dyn Error>> {
         if std::env::var("CI").is_err() {
-            dotenv::from_filename(".env.ci").ok();
-        } else {
             dotenv().ok();
         }
         let url = env::var("POSTGRES")?;
@@ -80,8 +76,6 @@ impl User {
     }
     pub async fn get_row_api(apikey: String) -> Result<User, Box<dyn Error>> {
         if std::env::var("CI").is_err() {
-            dotenv::from_filename(".env.ci").ok();
-        } else {
             dotenv().ok();
         }
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
@@ -108,8 +102,6 @@ impl User {
 
     pub async fn get_row(email: String) -> Result<User, Box<dyn Error>> {
         if std::env::var("CI").is_err() {
-            dotenv::from_filename(".env.ci").ok();
-        } else {
             dotenv().ok();
         }
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
@@ -136,8 +128,6 @@ impl User {
 
     pub async fn new_user(&self) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
-            dotenv::from_filename(".env.ci").ok();
-        } else {
             dotenv().ok();
         }
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
@@ -161,8 +151,6 @@ impl User {
         new_value: &str,
     ) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
-            dotenv::from_filename(".env.ci").ok();
-        } else {
             dotenv().ok();
         }
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
