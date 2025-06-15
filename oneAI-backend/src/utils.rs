@@ -16,8 +16,15 @@ pub struct WebInput {
 }
 
 #[derive(Deserialize, Serialize)]
+pub enum ApiCommand {
+    NewAPI,
+    DelAPI,
+    DelAllAPI,
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct WebOutput {
-    pub user: Option<User>,
+    pub user: Option<HiddenUser>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -37,16 +44,20 @@ pub struct Data {
 pub enum TableFields {
     Email,
     Password,
-    Apikey,
     Balance,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(PartialEq,Debug, Clone, Deserialize, Serialize)]
 pub struct User {
     pub email: String,
     pub password: String,
-    pub apikey: String,
-    pub balance: i64,
+    pub balance: i32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct HiddenUser {
+    pub email: String,
+    pub balance: i32,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

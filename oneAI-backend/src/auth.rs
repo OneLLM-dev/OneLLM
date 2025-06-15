@@ -48,16 +48,13 @@ pub async fn update_bal(email: String, password: String, change: i64) -> Option<
     None
 }
 
-impl HiddenUser{
-    pub async fn from_user(user:&mut User) -> Self{
+impl HiddenUser {
+    pub async fn from_user(user: &mut User) -> Self {
         let email = user.clone().email;
         let balance = user.balance;
         drop(user.to_owned());
 
-        return Self {
-            email,
-            balance,
-        }
+        return Self { email, balance };
     }
 }
 
