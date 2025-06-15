@@ -47,7 +47,7 @@ pub enum TableFields {
     Balance,
 }
 
-#[derive(PartialEq,Debug, Clone, Deserialize, Serialize)]
+#[derive(PartialEq, Debug, Clone, Deserialize, Serialize)]
 pub struct User {
     pub email: String,
     pub password: String,

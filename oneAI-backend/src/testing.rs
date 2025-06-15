@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use crate::{auth::{login, signup}, utils::User};
+    use crate::{
+        auth::{login, signup},
+        utils::User,
+    };
 
     #[tokio::test]
     async fn signup_test() {
@@ -23,12 +26,6 @@ mod tests {
             .expect("Error while trying to add new_user");
         assert_eq!(unwrapped_hashed_user.email, email);
         assert_eq!(unwrapped_hashed_user.balance, 0);
-
-    }
-
-    #[tokio::test]
-    async fn delete_user_test(){
-        User::delete_user("something@email.com").await.expect("Error Deleting user: ");
     }
 
     /// Test for Signup function and login function:
@@ -39,5 +36,12 @@ mod tests {
 
         let res = login(email, password).await;
         assert_ne!(res, None);
+    }
+
+    #[tokio::test]
+    async fn delete_user_test() {
+        User::delete_user("something@email.com")
+            .await
+            .expect("Error Deleting user: ");
     }
 }
