@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  DATABASE_URL: postgres://onellm:password@localhost:5432/OneLLM
 
 jobs:
   build:
