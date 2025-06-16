@@ -6,8 +6,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  DATABASE_URL: postgres://postgres:password@5432:5432/OneLLM
-  POSTGRES: postgres://postgres:password@5432:5432/OneLLM
+  DATABASE_URL: postgres://postgres:password@postgres:5432/OneLLM
+  POSTGRES: postgres://postgres:password@postgres:5432/OneLLM
   CI: true
   RUST_BACKTRACE: 1
 
