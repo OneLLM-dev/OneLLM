@@ -32,6 +32,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Start PostgreSQL
+        run: sudo systemctl start postgresql.service
       - name: Wait for PostgreSQL
         run: |
           for i in {1..10}; do
