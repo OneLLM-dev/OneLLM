@@ -7,6 +7,7 @@ pub enum AIProvider {
     OpenAI,
     Anthropic,
     Gemini,
+    DeepSeek,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,20 +18,13 @@ pub struct Input {
 }
 
 impl Input {
-    #[allow(unused)]
-    pub async fn get(&self) -> Result<String, reqwest::Error> {
-        let apikey: String;
-        match self.ai_provider {
-            AIProvider::OpenAI => {
-                apikey = std::env::var("OPENAI").expect("Error getting OPENAI apikey")
-            }
-            AIProvider::Anthropic => {
-                apikey = std::env::var("CLAUDE").expect("Error getting CLAUDE apikey")
-            }
-            AIProvider::Gemini => {
-                apikey = std::env::var("GEMINI").expect("Error getting GEMINI apikey")
-            }
-        }
+    pub async fn get(&self) -> Result<String, Box<dyn std::error::Error>> {
+        let apikey = match self.ai_provider {
+            AIProvider::OpenAI => std::env::var("OPENAI").expect("Error getting OPENAI apikey"),
+            AIProvider::Anthropic => std::env::var("CLAUDE").expect("Error getting CLAUDE apikey"),
+            AIProvider::Gemini => std::env::var("GEMINI").expect("Error getting GEMINI apikey"),
+            AIProvider::DeepSeek => std::env::var("DEEPSEEK").expect("Error getting DS apikey"),
+        };
         let client = reqwest::Client::new();
         let resp = client
             .post(self.endpoint.clone())
@@ -41,10 +35,9 @@ impl Input {
             .text()
             .await;
 
-        resp
+        Ok(resp?)
     }
 
-    #[allow(unused)]
     pub fn parse_input(input_str: &str) -> Result<Input, serde_json::Error> {
         let result: Result<Input, serde_json::Error> = serde_json::from_str(input_str);
 
