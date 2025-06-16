@@ -8,6 +8,7 @@ env:
   CARGO_TERM_COLOR: always
   DATABASE_URL: postgres://postgres:password@postgres:5432/OneLLM
   POSTGRES: postgres://postgres:password@postgres:5432/OneLLM
+  RUST_BACKTRACE: 1
 
 jobs:
   build:
@@ -37,9 +38,6 @@ jobs:
             echo "Waiting for PostgreSQL..."
             sleep 3
           done
-
-      - name: Run database migrations (if any)
-        run: cargo run --bin migrate || true
 
       - name: Run tests from testing.rs 
         run: cargo test --bin oneAI-backend 
