@@ -100,21 +100,20 @@ impl User {
         if std::env::var("CI").is_err() {
             dotenv().ok();
         }
+
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let row = sqlx::query(
-            "SELECT u.password, u.balance, a.key FROM users u \
-     JOIN api_keys a ON u.id = a.user_id WHERE u.email = $1",
-        )
-        .bind(&email)
-        .fetch_optional(&pool)
-        .await?;
+        let row = sqlx::query("SELECT email, password, balance FROM users WHERE email = $1")
+            .bind(&email)
+            .fetch_optional(&pool)
+            .await?;
 
         if let Some(record) = row {
             let password: String = record.try_get("password")?;
             let balance: i32 = record.try_get("balance")?;
-            let _key: String = record.try_get("key")?; // if you want to use it
+
+            //let _key: String = record.try_get("key")?; // if you want to use it
 
             Ok(Self {
                 email,
@@ -194,8 +193,6 @@ impl User {
     #[allow(unused)]
     pub async fn delete_user(email: &str) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
-            dotenv::from_filename(".env.ci").ok();
-        } else {
             dotenv().ok();
         }
 
@@ -216,10 +213,9 @@ impl User {
 }
 pub async fn init_db() -> Result<(), Box<dyn Error>> {
     if std::env::var("CI").is_err() {
-        dotenv::from_filename(".env.ci").ok();
-    } else {
         dotenv().ok();
     }
+
     let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
     let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
