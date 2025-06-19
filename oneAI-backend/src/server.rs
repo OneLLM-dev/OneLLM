@@ -1,3 +1,4 @@
+use sqlx::database;
 // use std::error::Error;
 use tower_http::cors::{Any, CorsLayer};
 
@@ -31,7 +32,7 @@ pub async fn server() {
         .route("/api", get(handle_api))
         .route("/post-backend", post(handle_post_website))
         .route("/get-backend", get(handle_get_website))
-        .route("/apikey-commands", get(gen_apikey))
+        .route("/apikey-commands", get(handle_api_auth))
         .layer(cors);
     let ipaddr = "0.0.0.0:3000";
     let listener = tokio::net::TcpListener::bind(ipaddr).await.unwrap();
@@ -176,24 +177,38 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
                 )));
             }
         },
+        _ => {
+            return Json(FailOrSucc::Failure(
+                "Tried to do Handle API at POST section".to_owned(),
+            ));
+        }
     }
 
     // Ok(())
 }
 
-pub async fn gen_apikey(Query(query): Query<WebInput>) -> Json<FailOrSucc> {
+pub async fn handle_api_auth(Query(query): Query<WebInput>) -> Json<FailOrSucc> {
     let user = match auth::login(query.email, query.password).await {
         Some(u) => u,
         None => {
-            return Json(FailOrSucc::Failure("User not found".to_owned()));
+            return Json(FailOrSucc::Failure("Error while trying to sign in".to_owned()));
         }
     };
 
-    user.generate_apikey()
-        .await
-        .expect("Error while trying to generate apikey");
-
-    return Json(FailOrSucc::Success);
+    match query.function {
+        WebQuery::NewAPI => match user.generate_apikey().await {
+            Ok(api) => {
+                let return_data = Json(FailOrSucc::SuccessData(api));
+                return return_data;
+            },
+            Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+        },
+        WebQuery::DelAPI => {
+            // User::delete_apikey(&query.email, , all)
+            return Json(FailOrSucc::Success);
+        },
+        _ => return Json(FailOrSucc::Failure(String::from("Incorrect endpoint"))),
+    }
 }
 
 pub async fn handle_get_website(Query(query): Query<WebInput>) -> Json<WebOutput> {

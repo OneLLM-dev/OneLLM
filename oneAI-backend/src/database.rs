@@ -4,8 +4,8 @@ use sqlx::Row;
 use std::env;
 use std::error::Error;
 
-use crate::auth::{self, generate_api};
-use crate::utils::*;
+use crate::auth::basicauth::generate_api;
+use crate::{auth, utils::*};
 
 #[derive(Debug)]
 struct MissingUser(String);
@@ -19,20 +19,29 @@ impl std::fmt::Display for MissingUser {
 
 impl User {
     #[allow(unused)]
-    pub async fn delete_apikey(email: &str, apikey: &str) -> Result<(), Box<dyn Error>> {
+    pub async fn delete_apikey(email: &str, apikey: &str, all: bool) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
         }
         let url = env::var("POSTGRES")?;
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let deleted = sqlx::query(
-        "DELETE FROM api_keys WHERE key = $1 AND user_id = (SELECT id FROM users WHERE email = $2)"
-    ).bind(apikey).bind(email)
-    .execute(&pool)
-    .await?;
+        let mut deleted = sqlx::query(
+            "DELETE FROM api_keys \
+             WHERE key = $1 AND user_id = \
+             (SELECT id FROM users WHERE email = $2)",
+        );
 
-        if deleted.rows_affected() == 0 {
+        if all {
+            deleted = sqlx::query(
+                "DELETE FROM api_keys \
+                WHERE user_id = (SELECT id FROM users WHERE email = $1)",
+            );
+        }
+
+        let executed = deleted.bind(apikey).bind(email).execute(&pool).await?;
+
+        if executed.rows_affected() == 0 {
             return Err("API key not found or does not belong to the user.".into());
         }
 
@@ -47,9 +56,15 @@ impl User {
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
         // Count how many keys this user already has
-        let count = sqlx::query(
-            "SELECT COUNT(*) as count FROM api_keys WHERE user_id = (SELECT id FROM users WHERE email = $1)",
-        ).bind(&self.email).fetch_all(&pool).await?.iter().count();
+        let row = sqlx::query(
+            "SELECT COUNT(*) as count \
+             FROM api_keys \
+             WHERE user_id = (SELECT id FROM users WHERE email = $1)",
+        )
+        .bind(&self.email)
+        .fetch_one(&pool)
+        .await?;
+        let count: i64 = row.try_get("count")?;
 
         if count >= 10 {
             return Err("You have reached the maximum of 10 API keys.".into());
@@ -167,7 +182,7 @@ impl User {
             }
         }
 
-        auth::hash_user(&mut temp_user);
+        auth::basicauth::hash_user(&mut temp_user);
 
         match field {
             TableFields::Email | TableFields::Password | TableFields::Balance => {
