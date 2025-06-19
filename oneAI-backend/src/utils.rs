@@ -6,6 +6,10 @@ pub enum WebQuery {
     Login,
     Signup,
     UpdateBal(i64),
+    NewAPI,
+    DelAPI,
+    DelAllAPI,
+    APICount,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -16,10 +20,10 @@ pub struct WebInput {
 }
 
 #[derive(Deserialize, Serialize)]
-pub enum ApiCommand {
-    NewAPI,
-    DelAPI,
-    DelAllAPI,
+pub struct APIHandlerInput {
+    pub function: WebQuery,
+    pub email: String,
+    pub apikey: String,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -64,4 +68,5 @@ pub struct HiddenUser {
 pub enum FailOrSucc {
     Failure(String),
     Success,
+    SuccessData(String)
 }
