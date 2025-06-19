@@ -1,4 +1,3 @@
-use sqlx::database;
 // use std::error::Error;
 use tower_http::cors::{Any, CorsLayer};
 
@@ -16,7 +15,7 @@ use tower_http::services::ServeDir;
 
 use serde_json::{Value, json};
 
-use crate::auth::{self, update_bal};
+use crate::auth::basicauth::{self, update_bal};
 use crate::requests::Input;
 use crate::utils::*;
 
@@ -115,7 +114,7 @@ pub async fn signup_and_update_db(
     email: String,
     password: String,
 ) -> Result<Option<User>, Box<dyn std::error::Error>> {
-    let user = match auth::signup(email, password).await {
+    let user = match basicauth::signup(email, password).await {
         Some(a) => a,
         None => return Ok(None),
     };
@@ -188,10 +187,12 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
 }
 
 pub async fn handle_api_auth(Query(query): Query<WebInput>) -> Json<FailOrSucc> {
-    let user = match auth::login(query.email, query.password).await {
+    let user = match basicauth::login(query.email, query.password).await {
         Some(u) => u,
         None => {
-            return Json(FailOrSucc::Failure("Error while trying to sign in".to_owned()));
+            return Json(FailOrSucc::Failure(
+                "Error while trying to sign in".to_owned(),
+            ));
         }
     };
 
@@ -200,13 +201,13 @@ pub async fn handle_api_auth(Query(query): Query<WebInput>) -> Json<FailOrSucc> 
             Ok(api) => {
                 let return_data = Json(FailOrSucc::SuccessData(api));
                 return return_data;
-            },
+            }
             Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
         },
         WebQuery::DelAPI => {
             // User::delete_apikey(&query.email, , all)
             return Json(FailOrSucc::Success);
-        },
+        }
         _ => return Json(FailOrSucc::Failure(String::from("Incorrect endpoint"))),
     }
 }
@@ -214,7 +215,7 @@ pub async fn handle_api_auth(Query(query): Query<WebInput>) -> Json<FailOrSucc> 
 pub async fn handle_get_website(Query(query): Query<WebInput>) -> Json<WebOutput> {
     match query.function {
         WebQuery::Login => {
-            let mut user = match auth::login(query.email, query.password).await {
+            let mut user = match basicauth::login(query.email, query.password).await {
                 Some(u) => u,
                 None => {
                     return Json(WebOutput { user: None });
