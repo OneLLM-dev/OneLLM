@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        auth::{login, signup},
+        auth::basicauth::{login, signup},
         database,
         utils::User,
     };
