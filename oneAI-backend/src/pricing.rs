@@ -1,30 +1,48 @@
-#![allow(unused)]
 #![allow(non_camel_case_types)]
-use crate::requests::{requests::AIProvider, *};
+use crate::requests::requests::AIProvider;
 
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum Model {
+    #[serde(rename = "GPT-4.1")]
     Gpt4_1,
+    #[serde(rename = "GPT-4.1-Mini")]
     Gpt4_1Mini,
+    #[serde(rename = "GPT-4.1-Nano")]
     Gpt4_1Nano,
+    #[serde(rename = "GPT-o3")]
     GptO3,
+    #[serde(rename = "GPT-o4-mini")]
     GptO4Mini,
+    #[serde(rename = "Opus-4")]
     ClaudeOpus4,
+    #[serde(rename = "Sonnet-4")]
     ClaudeSonnet4,
+    #[serde(rename = "Haiku-3.5")]
     ClaudeHaiku3_5,
+    #[serde(rename = "Opus-3")]
     ClaudeOpus3,
+    #[serde(rename = "Sonnet-3.7")]
     ClaudeSonnet3_7,
+    #[serde(rename = "Haiku-3")]
     ClaudeHaiku3,
+    #[serde(rename = "DeepSeek-Reasoner")]
     DeepSeekR1,
+    #[serde(rename = "DeepSeek-Chat")]
     DeepSeekV3,
     Gemini25FlashPreview,
+    #[serde(rename = "2.5-Pro-preview")]
     Gemini25ProPreview,
+    #[serde(rename = "2.0-Flash")]
     Gemini20Flash,
+    #[serde(rename = "2.0-Flash-lite")]
     Gemini20FlashLite,
+    #[serde(rename = "1.5-Flash")]
     Gemini15Flash,
+    #[serde(rename = "1.5-Flash-8B")]
     Gemini15Flash8B,
+    #[serde(rename = "1.5-Pro")]
     Gemini15Pro,
 }
 

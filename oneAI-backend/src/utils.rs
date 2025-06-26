@@ -68,5 +68,5 @@ pub struct HiddenUser {
 pub enum FailOrSucc {
     Failure(String),
     Success,
-    SuccessData(String)
+    SuccessData(String),
 }
