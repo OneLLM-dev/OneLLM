@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum WebQuery {
     Login,
     Signup,
@@ -17,13 +17,6 @@ pub struct WebInput {
     pub function: WebQuery,
     pub email: String,
     pub password: String,
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct APIHandlerInput {
-    pub function: WebQuery,
-    pub email: String,
-    pub apikey: String,
 }
 
 #[derive(Deserialize, Serialize)]

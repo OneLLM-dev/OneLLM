@@ -1,4 +1,3 @@
-// use std::error::Error;
 use tower_http::cors::{Any, CorsLayer};
 
 #[allow(unused)]
@@ -13,7 +12,7 @@ use axum::{
 
 use tower_http::services::ServeDir;
 
-use serde_json::{Value, json};
+use serde_json::json;
 
 use crate::utils::*;
 use crate::{
@@ -74,7 +73,7 @@ pub async fn handle_api(headers: HeaderMap, Json(payload): Json<APIInput>) -> Js
             }),
         });
     };
-    let user = match User::get_row_api(apikey.clone()).await {
+    match User::get_row_api(apikey.clone()).await {
         Ok(user_struct) => user_struct,
         Err(e) => {
             return Json(Output {
@@ -182,7 +181,7 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
 }
 
 pub async fn handle_api_auth(Query(query): Query<WebInput>) -> Json<FailOrSucc> {
-    let user = match basicauth::login(query.email, query.password).await {
+    let user = match basicauth::login(query.email.clone(), query.password).await {
         Some(u) => u,
         None => {
             return Json(FailOrSucc::Failure(
@@ -194,14 +193,19 @@ pub async fn handle_api_auth(Query(query): Query<WebInput>) -> Json<FailOrSucc> 
     match query.function {
         WebQuery::NewAPI => match user.generate_apikey().await {
             Ok(api) => {
-                let return_data = Json(FailOrSucc::SuccessData(api));
-                return return_data;
+                return Json(FailOrSucc::SuccessData(api));
             }
             Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
         },
-        WebQuery::DelAPI => {
-            // User::delete_apikey(&query.email, , all)
-            return Json(FailOrSucc::Success);
+        //        WebQuery::DelAPI => {
+        //            // User::delete_apikey(&query.email, , all)
+        //            return Json(FailOrSucc::Success);
+        //        }
+        WebQuery::APICount => {
+            match User::count_apikey(&query.email).await {
+                Ok(count) => return Json(FailOrSucc::SuccessData(count.to_string())),
+                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+            }
         }
         _ => return Json(FailOrSucc::Failure(String::from("Incorrect endpoint"))),
     }
@@ -234,10 +238,10 @@ pub async fn handle_get_website(Query(query): Query<WebInput>) -> Json<WebOutput
 //     return Json(response);
 // }
 
-fn unauthorised_field_provided() -> Json<Output> {
-    let response = Output {
-        code: 403,
-        output: json!("error: Unauthorised field provided."),
-    };
-    return Json(response);
-}
+//fn unauthorised_field_provided() -> Json<Output> {
+//    let response = Output {
+//        code: 403,
+//        output: json!("error: Unauthorised field provided."),
+//    };
+//    return Json(response);
+//}
