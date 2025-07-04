@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+
+use crate::requests::parseapi::{APIInput, Input};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum AIProvider {
@@ -10,42 +11,44 @@ pub enum AIProvider {
     DeepSeek,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Input {
-    pub endpoint: String,
-    pub data: Value,
-    pub ai_provider: AIProvider,
-}
-
-impl Input {
+impl APIInput {
     pub async fn get(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let apikey = match self.ai_provider {
+        let mut endpoint = self.endpoint.clone();
+        let apikey = match self.model.provider() {
             AIProvider::OpenAI => std::env::var("OPENAI").expect("Error getting OPENAI apikey"),
             AIProvider::Anthropic => std::env::var("CLAUDE").expect("Error getting CLAUDE apikey"),
-            AIProvider::Gemini => std::env::var("GEMINI").expect("Error getting GEMINI apikey"),
+            AIProvider::Gemini => {
+                let key = std::env::var("GEMINI").expect("Error getting GEMINI apikey");
+                endpoint += &format!("?key={}", key);
+                key
+            }
             AIProvider::DeepSeek => std::env::var("DEEPSEEK").expect("Error getting DS apikey"),
         };
         let client = reqwest::Client::new();
-        let resp = client
-            .post(self.endpoint.clone())
-            .bearer_auth(apikey)
-            .json(&self.data)
-            .send()
-            .await?
-            .text()
-            .await;
 
-        Ok(resp?)
-    }
+        match self.model.provider() {
+            AIProvider::Gemini => {
+                let resp = client
+                    .post(endpoint)
+                    .json(&self.clone().into_provider_request().await)
+                    .send()
+                    .await?
+                    .text()
+                    .await;
+                return Ok(resp?);
+            }
+            _ => {
+                let resp = client
+                    .post(endpoint)
+                    .bearer_auth(apikey)
+                    .json(&self.clone().into_provider_request().await)
+                    .send()
+                    .await?
+                    .text()
+                    .await;
 
-    pub fn parse_input(input_str: &str) -> Result<Input, serde_json::Error> {
-        let result: Result<Input, serde_json::Error> = serde_json::from_str(input_str);
-
-        let input = match result {
-            Ok(a) => a,
-            Err(e) => return Err(e),
-        };
-
-        Ok(input)
+                return Ok(resp?);
+            }
+        }
     }
 }

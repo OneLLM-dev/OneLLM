@@ -1,5 +1,7 @@
 use crate::pricing::Model;
+use crate::requests::requests::AIProvider;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Message {
@@ -54,6 +56,7 @@ pub struct ResponseFormat {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct APIInput {
+    pub endpoint: String,
     // Common fields
     pub model: Model,
     pub temperature: f64,
@@ -61,8 +64,8 @@ pub struct APIInput {
     pub messages: Vec<Message>,
     pub max_tokens: u32,
     pub top_p: f64,
-    pub stop_sequences: Vec<String>,
-    pub tools: Vec<Tool>,
+    pub stop_sequences: Option<Vec<String>>,
+    pub tools: Option<Vec<Tool>>,
 
     // Gemini
     #[serde(rename = "contents")]
@@ -96,4 +99,108 @@ pub struct APIInput {
     pub system: Option<String>,
     #[serde(rename = "top_k")]
     pub top_k: Option<u32>,
+}
+
+pub trait Input {
+    async fn into_provider_request(self) -> serde_json::Value;
+}
+
+impl Input for APIInput {
+    async fn into_provider_request(self) -> serde_json::Value {
+        match self.model.provider() {
+            AIProvider::OpenAI => {
+                json!({
+                    "model": self.model.name(),
+                    "messages": self.messages,
+                    "temperature": self.temperature,
+                    "max_tokens": self.max_tokens,
+                    "top_p": self.top_p,
+                    "stop": self.stop_sequences,
+                    "stream": self.stream,
+                    "frequency_penalty": self.frequency_penalty,
+                    "presence_penalty": self.presence_penalty,
+                    "n": self.n,
+                    "response_format": self.response_format,
+                    "seed": self.seed,
+                    "tool_choice": self.tool_choice,
+                    "tools": self.tools,
+                    "user": self.user,
+                })
+            }
+            AIProvider::Anthropic => {
+                let messages: Vec<serde_json::Value> = self
+                    .messages
+                    .into_iter()
+                    .map(|msg| {
+                        json!({
+                            "role": msg.role,
+                            "content": msg.content,
+                        })
+                    })
+                    .collect();
+
+                json!({
+                    "model": self.model.name(),
+                    "messages": messages,
+                    "temperature": self.temperature,
+                    "max_tokens": self.max_tokens,
+                    "top_p": self.top_p,
+                    "stop_sequences": self.stop_sequences,
+                    "stream": self.stream,
+                    "system": self.system,
+                    "top_k": self.top_k,
+                })
+            }
+            AIProvider::Gemini => {
+                let contents: Vec<serde_json::Value> = self
+                    .messages
+                    .into_iter()
+                    .map(|msg| {
+                        json!({
+                            "role": msg.role,
+                            "parts": [
+                                { "text": msg.content }
+                            ]
+                        })
+                    })
+                    .collect();
+
+                json!({
+                    "model": self.model.name(),
+                    "contents": contents,
+                    "safety_settings": self.safety_settings,
+                    "generation_config": {
+                        "temperature": self.temperature,
+                        "top_p": self.top_p,
+                        "top_k": self.generation_config.as_ref().map(|cfg| cfg.top_k),
+                        "candidate_count": self.generation_config.as_ref().map(|cfg| cfg.candidate_count),
+                        "max_output_tokens": self.max_tokens,
+                        "stop_sequences": self.stop_sequences,
+                    },
+                    "tools": self.tools,
+                })
+            }
+            AIProvider::DeepSeek => {
+                let model = match self.model {
+                    Model::DeepSeekR1 => "deepseek-reasoner",
+                    Model::DeepSeekV3 => "deepseek-chat",
+                    _ => panic!("This shouldn't be possible"),
+                };
+                json!({
+                    "model": model,
+                    "messages": self.messages,
+                    "temperature": self.temperature,
+                    "max_tokens": self.max_tokens,
+                    "top_p": self.top_p,
+                    "stop": self.stop_sequences,
+                    "stream": self.stream,
+                    "frequency_penalty": self.frequency_penalty,
+                    "presence_penalty": self.presence_penalty,
+                    "logprobs": self.logprobs,
+                    "top_logprobs": self.top_logprobs,
+                    "tools": self.tools,
+                })
+            }
+        }
+    }
 }

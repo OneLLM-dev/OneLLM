@@ -31,6 +31,7 @@ pub enum Model {
     DeepSeekR1,
     #[serde(rename = "DeepSeek-Chat")]
     DeepSeekV3,
+    #[serde(rename = "2.5-Flash-preview")]
     Gemini25FlashPreview,
     #[serde(rename = "2.5-Pro-preview")]
     Gemini25ProPreview,
@@ -47,7 +48,32 @@ pub enum Model {
 }
 
 impl Model {
-    pub async fn price(&self) -> f32 {
+    pub fn name(&self) -> &str {
+        match self {
+            Model::Gpt4_1 => "GPT-4.1",
+            Model::Gpt4_1Mini => "GPT-4.1-Mini",
+            Model::Gpt4_1Nano => "GPT-4.1-Nano",
+            Model::GptO3 => "GPT-o3",
+            Model::GptO4Mini => "GPT-o4-mini",
+            Model::ClaudeOpus4 => "Opus-4",
+            Model::ClaudeSonnet4 => "Sonnet-4",
+            Model::ClaudeHaiku3_5 => "Haiku-3.5",
+            Model::ClaudeOpus3 => "Opus-3",
+            Model::ClaudeSonnet3_7 => "Sonnet-3.7",
+            Model::ClaudeHaiku3 => "Haiku-3",
+            Model::DeepSeekR1 => "DeepSeek-Reasoner",
+            Model::DeepSeekV3 => "DeepSeek-Chat",
+            Model::Gemini25FlashPreview => "Gemini25FlashPreview",
+            Model::Gemini25ProPreview => "2.5-Pro-preview",
+            Model::Gemini20Flash => "2.0-Flash",
+            Model::Gemini20FlashLite => "2.0-Flash-lite",
+            Model::Gemini15Flash => "1.5-Flash",
+            Model::Gemini15Flash8B => "1.5-Flash-8B",
+            Model::Gemini15Pro => "1.5-Pro",
+        }
+    }
+
+    pub fn price(&self) -> f32 {
         match self {
             // ==== OpenAI ====
             Model::Gpt4_1 => 10.4,
@@ -79,7 +105,7 @@ impl Model {
         }
     }
 
-    pub async fn provider(&self) -> AIProvider {
+    pub fn provider(&self) -> AIProvider {
         match self {
             // ==== OpenAI ====
             Model::Gpt4_1
