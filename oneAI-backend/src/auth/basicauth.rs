@@ -70,4 +70,3 @@ pub fn generate_api() -> String {
 
     format!("oa-{}", res)
 }
-
