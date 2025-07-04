@@ -18,6 +18,25 @@ impl std::fmt::Display for MissingUser {
 }
 
 impl User {
+    pub async fn count_apikey(email: &str) -> Result<i64, Box<dyn Error>> {
+        if std::env::var("CI").is_err() {
+            dotenv().ok();
+        }
+        let url = env::var("POSTGRES")?;
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+        let row = sqlx::query(
+            "SELECT COUNT(*) as count \
+             FROM api_keys \
+             WHERE user_id = (SELECT id FROM users WHERE email = $1)",
+        )
+        .bind(&email)
+        .fetch_one(&pool)
+        .await?;
+        let count: i64 = row.try_get("count")?;
+
+        Ok(count)
+    }
     #[allow(unused)]
     pub async fn delete_apikey(email: &str, apikey: &str, all: bool) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
