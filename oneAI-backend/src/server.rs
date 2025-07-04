@@ -15,9 +15,11 @@ use tower_http::services::ServeDir;
 
 use serde_json::{Value, json};
 
-use crate::auth::basicauth::{self, update_bal};
-use crate::requests::requests::Input;
 use crate::utils::*;
+use crate::{
+    auth::basicauth::{self, update_bal},
+    requests::parseapi::APIInput,
+};
 
 #[allow(unused)]
 pub async fn server() {
@@ -28,7 +30,7 @@ pub async fn server() {
 
     let app = Router::new()
         .fallback_service(ServeDir::new("../OneLLM-Website/"))
-        .route("/api", get(handle_api))
+        .route("/api", post(handle_api))
         .route("/post-backend", post(handle_post_website))
         .route("/get-backend", get(handle_get_website))
         .route("/apikey-commands", get(handle_api_auth))
@@ -40,7 +42,7 @@ pub async fn server() {
     axum::serve(listener, app).await.unwrap();
 }
 
-pub async fn handle_api(headers: HeaderMap, Json(payload): Json<Input>) -> Json<Output> {
+pub async fn handle_api(headers: HeaderMap, Json(payload): Json<APIInput>) -> Json<Output> {
     let apikey = if let Some(auth_header_value) = headers.get("Authorization") {
         match auth_header_value.to_str() {
             Ok(header_str) => {
@@ -82,13 +84,6 @@ pub async fn handle_api(headers: HeaderMap, Json(payload): Json<Input>) -> Json<
                 }),
             });
         }
-    };
-
-    let _: Data = match serde_json::from_value::<Value>(payload.data.clone()) {
-        Ok(_) => Data {
-            max_tokens: user.balance as u128,
-        },
-        Err(_) => return unauthorised_field_provided(),
     };
 
     let output = match payload.get().await {
