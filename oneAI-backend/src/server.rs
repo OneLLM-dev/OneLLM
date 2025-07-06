@@ -7,6 +7,7 @@ use axum::{
     Json, Router,
     extract::Query,
     http::header::HeaderMap,
+    response::IntoResponse,
     routing::{get, post},
 };
 
@@ -235,8 +236,8 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
     // Ok(())
 }
 
-pub async fn handle_api_auth(Query(query): Query<WebInput>) -> Json<FailOrSucc> {
-    let user = match basicauth::login(query.email.clone(), query.password).await {
+pub async fn handle_api_auth(Query(query): Query<WebInput>) -> impl IntoResponse {
+    let user = match basicauth::login(query.email.clone(), query.password.clone()).await {
         Some(u) => u,
         None => {
             return Json(FailOrSucc::Failure(
@@ -246,18 +247,26 @@ pub async fn handle_api_auth(Query(query): Query<WebInput>) -> Json<FailOrSucc> 
     };
 
     match query.function {
-        WebQuery::NewAPI(keyname) => match user.generate_apikey(&keyname).await {
+        WebQuery::NewAPI => match user
+            .generate_apikey(&query.name.unwrap_or("".to_owned()))
+            .await
+        {
             Ok(api) => return Json(FailOrSucc::SuccessData(api)),
             Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
         },
 
-        WebQuery::DelAPI(api) => match User::delete_apikey(&query.email, &api, false).await {
-            Ok(()) => return Json(FailOrSucc::Success),
-            Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
-        },
+        WebQuery::DelAPI => {
+            println!("Query:\n{query:#?}");
+            match User::delete_apikey(&query.email, &query.name.unwrap_or("".to_string()), false)
+                .await
+            {
+                Ok(()) => return Json(FailOrSucc::Success),
+                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+            }
+        }
 
-        WebQuery::APICount => match User::count_apikey(&query.email).await {
-            Ok(count) => return Json(FailOrSucc::SuccessData(count.to_string())),
+        WebQuery::APICount => match User::get_keynames(&query.email).await {
+            Ok(keynamevec) => return Json(FailOrSucc::SuccessVecData(keynamevec)),
             Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
         },
 

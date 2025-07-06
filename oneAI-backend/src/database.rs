@@ -151,6 +151,33 @@ impl User {
         }
     }
 
+    pub async fn get_keynames(email: &str) -> Result<Vec<String>, Box<dyn Error>> {
+        // Load .env unless running in CI
+        if std::env::var("CI").is_err() {
+            dotenv().ok();
+        }
+
+        // Connect to DB
+        let url = env::var("POSTGRES").expect("Postgres DB URL not found");
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+        // Get API key names
+        let rows = sqlx::query(
+            "SELECT api_keys.name 
+         FROM api_keys
+         JOIN users ON api_keys.user_id = users.id
+         WHERE users.email = $1",
+        )
+        .bind(email)
+        .fetch_all(&pool)
+        .await?;
+        let keynames = rows
+            .into_iter()
+            .map(|row| row.get::<String, _>("name"))
+            .collect();
+
+        Ok(keynames)
+    }
     pub async fn new_user(&self) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
@@ -170,60 +197,57 @@ impl User {
         Ok(())
     }
 
-pub async fn update_db(
-    &self,
-    field: TableFields,
-    new_value: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    if std::env::var("CI").is_err() {
-        dotenv().ok();
+    pub async fn update_db(
+        &self,
+        field: TableFields,
+        new_value: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if std::env::var("CI").is_err() {
+            dotenv().ok();
+        }
+        let url = std::env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+        let mut temp_user = self.clone();
+
+        // Update the in-memory user struct with the new value
+        match field {
+            TableFields::Email => temp_user.email = new_value.to_string(),
+            TableFields::Password => temp_user.password = new_value.to_string(),
+            TableFields::Balance => {
+                temp_user.balance = new_value
+                    .parse::<u32>()
+                    .expect("Error while trying to parse balance");
+            }
+        }
+
+        // Apply hashing logic if needed (likely hashes password if field == Password)
+        auth::basicauth::hash_user(&mut temp_user);
+
+        // Prepare the SQL query
+        let field_str = field.match_field();
+        let query = format!("UPDATE users SET {} = $1 WHERE email = $2", field_str);
+
+        let mut query_builder = sqlx::query(&query);
+
+        // Bind the correct value based on the field type
+        match field {
+            TableFields::Email => {
+                query_builder = query_builder.bind(&temp_user.email);
+            }
+            TableFields::Password => {
+                query_builder = query_builder.bind(&temp_user.password);
+            }
+            TableFields::Balance => {
+                query_builder = query_builder.bind(temp_user.balance as i32);
+            }
+        }
+
+        // Bind the email for the WHERE clause and execute
+        query_builder.bind(&self.email).execute(&pool).await?;
+
+        Ok(())
     }
-    let url = std::env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
-    let pool = sqlx::postgres::PgPool::connect(&url).await?;
-
-    let mut temp_user = self.clone();
-
-    // Update the in-memory user struct with the new value
-    match field {
-        TableFields::Email => temp_user.email = new_value.to_string(),
-        TableFields::Password => temp_user.password = new_value.to_string(),
-        TableFields::Balance => {
-            temp_user.balance = new_value
-                .parse::<u32>()
-                .expect("Error while trying to parse balance");
-        }
-    }
-
-    // Apply hashing logic if needed (likely hashes password if field == Password)
-    auth::basicauth::hash_user(&mut temp_user);
-
-    // Prepare the SQL query
-    let field_str = field.match_field();
-    let query = format!("UPDATE users SET {} = $1 WHERE email = $2", field_str);
-
-    let mut query_builder = sqlx::query(&query);
-
-    // Bind the correct value based on the field type
-    match field {
-        TableFields::Email => {
-            query_builder = query_builder.bind(&temp_user.email);
-        }
-        TableFields::Password => {
-            query_builder = query_builder.bind(&temp_user.password);
-        }
-        TableFields::Balance => {
-            query_builder = query_builder.bind(temp_user.balance as i32);
-        }
-    }
-
-    // Bind the email for the WHERE clause and execute
-    query_builder
-        .bind(&self.email)
-        .execute(&pool)
-        .await?;
-
-    Ok(())
-}
     #[allow(unused)]
     pub async fn delete_user(email: &str) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
