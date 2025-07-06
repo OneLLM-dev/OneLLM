@@ -37,8 +37,8 @@ impl User {
 
         Ok(count)
     }
-    #[allow(unused)]
-    pub async fn delete_apikey(email: &str, apikey: &str, all: bool) -> Result<(), Box<dyn Error>> {
+
+    pub async fn delete_apikey(email: &str, name: &str, all: bool) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
         }
@@ -58,7 +58,7 @@ impl User {
             );
         }
 
-        let executed = deleted.bind(apikey).bind(email).execute(&pool).await?;
+        let executed = deleted.bind(name).bind(email).execute(&pool).await?;
 
         if executed.rows_affected() == 0 {
             return Err("API key not found or does not belong to the user.".into());
@@ -67,7 +67,7 @@ impl User {
         Ok(())
     }
 
-    pub async fn generate_apikey(&self) -> Result<String, Box<dyn Error>> {
+    pub async fn generate_apikey(&self, name: &str) -> Result<String, Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
         }
@@ -75,15 +75,7 @@ impl User {
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
         // Count how many keys this user already has
-        let row = sqlx::query(
-            "SELECT COUNT(*) as count \
-             FROM api_keys \
-             WHERE user_id = (SELECT id FROM users WHERE email = $1)",
-        )
-        .bind(&self.email)
-        .fetch_one(&pool)
-        .await?;
-        let count: i64 = row.try_get("count")?;
+        let count = Self::count_apikey(&self.email).await?;
 
         if count >= 10 {
             return Err("You have reached the maximum of 10 API keys.".into());
@@ -93,8 +85,8 @@ impl User {
 
         let new_key = generate_api();
         sqlx::query(
-            "INSERT INTO api_keys (user_id, key) VALUES ((SELECT id FROM users WHERE email = $1), $2)",
-        ).bind(&self.email).bind(&new_key)
+            "INSERT INTO api_keys (user_id, key, name) VALUES ((SELECT id FROM users WHERE email = $1), $2, $3)",
+        ).bind(&self.email).bind(&new_key).bind(name)
         .execute(&pool)
         .await?;
 
@@ -123,7 +115,7 @@ impl User {
             Ok(Self {
                 email,
                 password,
-                balance,
+                balance: balance as u32,
             })
         } else {
             Err(Box::new(MissingUser("No such user was found".to_string())))
@@ -152,7 +144,7 @@ impl User {
             Ok(Self {
                 email,
                 password,
-                balance,
+                balance: balance as u32,
             })
         } else {
             Err(Box::new(MissingUser("No such user was found".to_string())))
@@ -171,59 +163,67 @@ impl User {
         )
         .bind(&self.email)
         .bind(&self.password)
-        .bind(self.balance)
+        .bind(self.balance as i32)
         .fetch_one(&pool)
         .await?;
 
         Ok(())
     }
 
-    pub async fn update_db(
-        &self,
-        field: TableFields,
-        new_value: &str,
-    ) -> Result<(), Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
+pub async fn update_db(
+    &self,
+    field: TableFields,
+    new_value: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::var("CI").is_err() {
+        dotenv().ok();
+    }
+    let url = std::env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
+    let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+    let mut temp_user = self.clone();
+
+    // Update the in-memory user struct with the new value
+    match field {
+        TableFields::Email => temp_user.email = new_value.to_string(),
+        TableFields::Password => temp_user.password = new_value.to_string(),
+        TableFields::Balance => {
+            temp_user.balance = new_value
+                .parse::<u32>()
+                .expect("Error while trying to parse balance");
         }
-        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
-
-        let mut temp_user = self.clone();
-
-        match field {
-            TableFields::Email => temp_user.email = new_value.to_string(),
-            TableFields::Password => temp_user.password = new_value.to_string(),
-            TableFields::Balance => {
-                temp_user.balance = new_value
-                    .parse()
-                    .expect("Error while trying to parse balance")
-            }
-        }
-
-        auth::basicauth::hash_user(&mut temp_user);
-
-        match field {
-            TableFields::Email | TableFields::Password | TableFields::Balance => {
-                let field_str = field.match_field();
-                let query = format!("UPDATE users SET {} = $1 WHERE email = $2", field_str);
-
-                let balance = temp_user.balance.to_string();
-                sqlx::query(&query)
-                    .bind(match field {
-                        TableFields::Email => &temp_user.email,
-                        TableFields::Password => &temp_user.password,
-                        TableFields::Balance => &balance,
-                    })
-                    .bind(&self.email)
-                    .execute(&pool)
-                    .await?;
-            }
-        }
-
-        Ok(())
     }
 
+    // Apply hashing logic if needed (likely hashes password if field == Password)
+    auth::basicauth::hash_user(&mut temp_user);
+
+    // Prepare the SQL query
+    let field_str = field.match_field();
+    let query = format!("UPDATE users SET {} = $1 WHERE email = $2", field_str);
+
+    let mut query_builder = sqlx::query(&query);
+
+    // Bind the correct value based on the field type
+    match field {
+        TableFields::Email => {
+            query_builder = query_builder.bind(&temp_user.email);
+        }
+        TableFields::Password => {
+            query_builder = query_builder.bind(&temp_user.password);
+        }
+        TableFields::Balance => {
+            query_builder = query_builder.bind(temp_user.balance as i32);
+        }
+    }
+
+    // Bind the email for the WHERE clause and execute
+    query_builder
+        .bind(&self.email)
+        .execute(&pool)
+        .await?;
+
+    Ok(())
+}
     #[allow(unused)]
     pub async fn delete_user(email: &str) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {

@@ -1,24 +1,24 @@
+use redis::AsyncCommands;
+use std::time::{SystemTime, UNIX_EPOCH};
+use tokio;
 use tower_http::cors::{Any, CorsLayer};
 
-#[allow(unused)]
 use axum::{
     Json, Router,
     extract::Query,
     http::header::HeaderMap,
-    response::Html,
     routing::{get, post},
 };
-// use std::net::SocketAddr;
 
 use tower_http::services::ServeDir;
 
 use serde_json::json;
 
-use crate::utils::*;
 use crate::{
-    auth::basicauth::{self, update_bal},
+    auth::basicauth::{self},
     requests::parseapi::APIInput,
 };
+use crate::{payment, utils::*};
 
 #[allow(unused)]
 pub async fn server() {
@@ -33,6 +33,7 @@ pub async fn server() {
         .route("/post-backend", post(handle_post_website))
         .route("/get-backend", get(handle_get_website))
         .route("/apikey-commands", get(handle_api_auth))
+        .route("/webhook", post(payment::handle_webhook))
         .layer(cors);
     let ipaddr = "0.0.0.0:3000";
     let listener = tokio::net::TcpListener::bind(ipaddr).await.unwrap();
@@ -41,7 +42,43 @@ pub async fn server() {
     axum::serve(listener, app).await.unwrap();
 }
 
+const MAX_TOKENS: f64 = 40.0;
+const REFILL_RATE: f64 = MAX_TOKENS / 60.0; // tokens per second
+
+async fn allow_request(
+    conn: &mut redis::aio::MultiplexedConnection,
+    api_key: &str,
+) -> redis::RedisResult<bool> {
+    let tokens_key = format!("tokens:{}", api_key);
+    let timestamp_key = format!("timestamp:{}", api_key);
+
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs_f64();
+
+    let tokens: Option<f64> = conn.get(&tokens_key).await.ok();
+    let last_refill: Option<f64> = conn.get(&timestamp_key).await.ok();
+
+    let tokens = tokens.unwrap_or(MAX_TOKENS);
+    let last_refill = last_refill.unwrap_or(now);
+
+    let elapsed = now - last_refill;
+    let new_tokens = f64::min(MAX_TOKENS, tokens + elapsed * REFILL_RATE);
+
+    let allowed = if new_tokens >= 1.0 {
+        let updated_tokens = new_tokens - 1.0;
+        let _: () = conn.set_ex(&tokens_key, updated_tokens, 120).await?;
+        let _: () = conn.set_ex(&timestamp_key, now, 120).await?;
+        true
+    } else {
+        false
+    };
+
+    Ok(allowed)
+}
 pub async fn handle_api(headers: HeaderMap, Json(payload): Json<APIInput>) -> Json<Output> {
+    dotenv::dotenv().ok();
     let apikey = if let Some(auth_header_value) = headers.get("Authorization") {
         match auth_header_value.to_str() {
             Ok(header_str) => {
@@ -73,6 +110,32 @@ pub async fn handle_api(headers: HeaderMap, Json(payload): Json<APIInput>) -> Js
             }),
         });
     };
+
+    let redis = redis::Client::open(
+        std::env::var("REDIS")
+            .expect("Redis ENV VAR not found")
+            .as_str(),
+    )
+    .expect("Unable to connect to redis");
+
+    if !allow_request(
+        &mut redis
+            .get_multiplexed_async_connection()
+            .await
+            .expect("Error while trying to get MultiplexedConnection"),
+        &apikey,
+    )
+    .await
+    .expect("Error while checking if request should be allowed")
+    {
+        return Json(Output {
+            code: 429,
+            output: json!({
+                "error": "Rate limit exceeded."
+            }),
+        });
+    }
+
     match User::get_row_api(apikey.clone()).await {
         Ok(user_struct) => user_struct,
         Err(e) => {
@@ -104,7 +167,7 @@ pub async fn handle_api(headers: HeaderMap, Json(payload): Json<APIInput>) -> Js
     })
 }
 
-pub async fn signup_and_update_db(
+async fn signup_and_update_db(
     email: String,
     password: String,
 ) -> Result<Option<User>, Box<dyn std::error::Error>> {
@@ -162,14 +225,6 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
                 "Error logging in. Login is not POST request",
             )));
         }
-        WebQuery::UpdateBal(a) => match update_bal(query.email, query.password, a).await {
-            Some(_) => return Json(FailOrSucc::Success),
-            None => {
-                return Json(FailOrSucc::Failure(String::from(
-                    "Error while trying to update your account balance",
-                )));
-            }
-        },
         _ => {
             return Json(FailOrSucc::Failure(
                 "Tried to do Handle API at POST section".to_owned(),
@@ -191,22 +246,26 @@ pub async fn handle_api_auth(Query(query): Query<WebInput>) -> Json<FailOrSucc> 
     };
 
     match query.function {
-        WebQuery::NewAPI => match user.generate_apikey().await {
-            Ok(api) => {
-                return Json(FailOrSucc::SuccessData(api));
-            }
+        WebQuery::NewAPI(keyname) => match user.generate_apikey(&keyname).await {
+            Ok(api) => return Json(FailOrSucc::SuccessData(api)),
             Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
         },
-        //        WebQuery::DelAPI => {
-        //            // User::delete_apikey(&query.email, , all)
-        //            return Json(FailOrSucc::Success);
-        //        }
-        WebQuery::APICount => {
-            match User::count_apikey(&query.email).await {
-                Ok(count) => return Json(FailOrSucc::SuccessData(count.to_string())),
-                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
-            }
-        }
+
+        WebQuery::DelAPI(api) => match User::delete_apikey(&query.email, &api, false).await {
+            Ok(()) => return Json(FailOrSucc::Success),
+            Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+        },
+
+        WebQuery::APICount => match User::count_apikey(&query.email).await {
+            Ok(count) => return Json(FailOrSucc::SuccessData(count.to_string())),
+            Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+        },
+
+        WebQuery::DelAllAPI => match User::delete_apikey(&user.email, "", true).await {
+            Ok(()) => return Json(FailOrSucc::Success),
+            Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+        },
+
         _ => return Json(FailOrSucc::Failure(String::from("Incorrect endpoint"))),
     }
 }

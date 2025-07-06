@@ -6,8 +6,8 @@ pub enum WebQuery {
     Login,
     Signup,
     UpdateBal(i64),
-    NewAPI,
-    DelAPI,
+    NewAPI(String),
+    DelAPI(String),
     DelAllAPI,
     APICount,
 }
@@ -48,13 +48,13 @@ pub enum TableFields {
 pub struct User {
     pub email: String,
     pub password: String,
-    pub balance: i32,
+    pub balance: u32,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct HiddenUser {
     pub email: String,
-    pub balance: i32,
+    pub balance: u32,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

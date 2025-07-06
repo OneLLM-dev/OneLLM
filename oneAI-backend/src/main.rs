@@ -1,5 +1,6 @@
 mod auth;
 mod database;
+mod payment;
 mod pricing;
 mod requests;
 mod server;
@@ -10,8 +11,8 @@ use server::server;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = database::init_db().await?;
-    let _ok = server().await;
+    let _db = database::init_db().await?;
+    let _server = server().await;
 
     Ok(())
 }
