@@ -6,17 +6,18 @@ pub enum WebQuery {
     Login,
     Signup,
     UpdateBal(i64),
-    NewAPI(String),
-    DelAPI(String),
+    NewAPI,
+    DelAPI,
     DelAllAPI,
     APICount,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct WebInput {
     pub function: WebQuery,
     pub email: String,
     pub password: String,
+    pub name: Option<String>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -62,4 +63,5 @@ pub enum FailOrSucc {
     Failure(String),
     Success,
     SuccessData(String),
+    SuccessVecData(Vec<String>),
 }
