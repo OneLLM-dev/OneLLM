@@ -4,7 +4,7 @@ use sqlx::Row;
 use std::env;
 use std::error::Error;
 
-use crate::auth::basicauth::generate_api;
+use crate::auth::basicauth::{generate_api, login};
 use crate::{auth, utils::*};
 
 #[derive(Debug)]
@@ -38,16 +38,25 @@ impl User {
         Ok(count)
     }
 
-    pub async fn delete_apikey(email: &str, name: &str, all: bool) -> Result<(), Box<dyn Error>> {
+    pub async fn delete_apikey(
+        email: &str,
+        password: &str,
+        name: &str,
+        all: bool,
+    ) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
         }
         let url = env::var("POSTGRES")?;
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
+        if let None = login(email.to_string(), password.to_string()).await {
+            return Err("Couldnt log user in".into());
+        };
+
         let mut deleted = sqlx::query(
             "DELETE FROM api_keys \
-             WHERE key = $1 AND user_id = \
+             WHERE name = $1 AND user_id = \
              (SELECT id FROM users WHERE email = $2)",
         );
 

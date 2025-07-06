@@ -203,7 +203,7 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
                 .unwrap();
 
             match user {
-                Some(_) => return Json(FailOrSucc::Success),
+                Some(_) => return Json(FailOrSucc::Successful(String::from("Successful operation"))),
                 None => {
                     return Json(FailOrSucc::Failure(String::from(
                         "Error while trying to create your account",
@@ -256,11 +256,15 @@ pub async fn handle_api_auth(Query(query): Query<WebInput>) -> impl IntoResponse
         },
 
         WebQuery::DelAPI => {
-            println!("Query:\n{query:#?}");
-            match User::delete_apikey(&query.email, &query.name.unwrap_or("".to_string()), false)
-                .await
+            match User::delete_apikey(
+                &query.email,
+                &query.password,
+                &query.name.unwrap_or("".to_string()),
+                false,
+            )
+            .await
             {
-                Ok(()) => return Json(FailOrSucc::Success),
+                Ok(()) => return Json(FailOrSucc::Successful("Successful operation".to_string())),
                 Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
             }
         }
@@ -270,10 +274,12 @@ pub async fn handle_api_auth(Query(query): Query<WebInput>) -> impl IntoResponse
             Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
         },
 
-        WebQuery::DelAllAPI => match User::delete_apikey(&user.email, "", true).await {
-            Ok(()) => return Json(FailOrSucc::Success),
-            Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
-        },
+        WebQuery::DelAllAPI => {
+            match User::delete_apikey(&user.email, &query.password, "", true).await {
+                Ok(()) => return Json(FailOrSucc::Successful("Successful operation".to_string())),
+                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+            }
+        }
 
         _ => return Json(FailOrSucc::Failure(String::from("Incorrect endpoint"))),
     }

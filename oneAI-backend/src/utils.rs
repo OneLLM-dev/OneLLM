@@ -61,7 +61,7 @@ pub struct HiddenUser {
 #[derive(Debug, Deserialize, Serialize)]
 pub enum FailOrSucc {
     Failure(String),
-    Success,
+    Successful(String),
     SuccessData(String),
     SuccessVecData(Vec<String>),
 }
