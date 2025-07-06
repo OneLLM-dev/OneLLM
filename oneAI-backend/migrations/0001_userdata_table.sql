@@ -6,10 +6,11 @@ create table users (
 );
 
 -- API KEYS TABLE
-create table api_keys (
-    id serial primary key,
-    user_id integer not null references users(id) on delete cascade,
-    key varchar not null unique
+CREATE TABLE api_keys (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    key VARCHAR NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    CONSTRAINT unique_user_api_key_name UNIQUE (user_id, name)
 );
-
 create unique index email on users (email);
