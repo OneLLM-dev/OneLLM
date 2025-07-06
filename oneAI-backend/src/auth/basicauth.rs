@@ -28,24 +28,32 @@ pub async fn signup(email: String, password: String) -> Option<User> {
     Some(user)
 }
 
-pub async fn update_bal(email: String, password: String, change: i64) -> Option<User> {
-    let user = match login(email, password).await {
-        Some(a) => a,
-        None => return None,
+pub async fn update_bal(email: String, change: i32) -> Option<User> {
+    println!("email: {}\n change: {}", email, change);
+    let user = match User::get_row(email).await {
+        Ok(a) => a,
+        Err(e) => {
+            eprintln!("e: {e}");
+            return None;
+        }
     };
 
     match user
         .update_db(
             TableFields::Balance,
-            &(user.balance + change as i32).to_string(),
+            &(user.balance + change as u32).to_string(),
         )
         .await
     {
-        Ok(_) => {}
-        Err(_) => return None,
+        Ok(_) => {
+            println!("It went through");
+            return Some(user);
+        }
+        Err(e) => {
+            eprintln!("Error: {e}");
+            return None;
+        }
     }
-
-    None
 }
 
 impl HiddenUser {
