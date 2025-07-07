@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    requests::parseapi::{APIInput, Input},
+    requests::parseapi::{APIInput},
     utils::User,
 };
 
