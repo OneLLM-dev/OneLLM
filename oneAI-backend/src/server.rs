@@ -5,10 +5,9 @@ use tower_http::cors::{Any, CorsLayer};
 
 use axum::{
     Json, Router,
-    extract::Query,
     http::header::HeaderMap,
     response::IntoResponse,
-    routing::{get, post},
+    routing::post,
 };
 
 use tower_http::services::ServeDir;
@@ -32,8 +31,7 @@ pub async fn server() {
         .fallback_service(ServeDir::new("../OneLLM-Website/"))
         .route("/api", post(handle_api))
         .route("/post-backend", post(handle_post_website))
-        .route("/get-backend", get(handle_get_website))
-        .route("/apikey-commands", get(handle_api_auth))
+        .route("/apikey-commands", post(handle_api_auth))
         .route("/webhook", post(payment::handle_webhook))
         .layer(cors);
     let ipaddr = "0.0.0.0:3000";
@@ -185,17 +183,7 @@ async fn signup_and_update_db(
     Ok(Some(user))
 }
 
-// #[derive(Debug)]
-// struct AuthError(String);
-// impl Error for AuthError {}
-
-// impl std::fmt::Display for AuthError {
-//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         write!(f, "Update error: {}", self.0)
-//     }
-// }
-
-pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc> {
+pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoResponse {
     match query.function {
         WebQuery::Signup => {
             let user: Option<User> = signup_and_update_db(query.email, query.password)
@@ -203,28 +191,32 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
                 .unwrap();
 
             match user {
-                Some(_) => return Json(FailOrSucc::Successful(String::from("Successful operation"))),
+                Some(_) => {
+                    return Json(FailOrSucc::Successful(String::from("Successful operation")));
+                }
                 None => {
                     return Json(FailOrSucc::Failure(String::from(
                         "Error while trying to create your account",
                     )));
                 }
             }
-
-            //     auth::signup(
-            //     query.data["email"].to_string(),
-            //     query.data["password"].to_string(),
-            // )
-            // .await
-            // .unwrap_or_else(|| return None)
-            // .new_user()
-            // .await
-            // .expect("Error adding user")
         }
         WebQuery::Login => {
-            return Json(FailOrSucc::Failure(String::from(
-                "Error logging in. Login is not POST request",
-            )));
+            let mut user = match basicauth::login(query.email, query.password).await {
+                Some(u) => u,
+                None => {
+                    return Json(FailOrSucc::Failure("Could not log user in".to_string()));
+                }
+            };
+
+
+            let hidden_user = WebOutput {
+                user: HiddenUser::from_user(&mut user).await,
+            };
+
+            println!("Hidden User: {:#?}", hidden_user);
+
+            return Json(FailOrSucc::User(hidden_user));
         }
         _ => {
             return Json(FailOrSucc::Failure(
@@ -232,11 +224,9 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> Json<FailOrSucc
             ));
         }
     }
-
-    // Ok(())
 }
 
-pub async fn handle_api_auth(Query(query): Query<WebInput>) -> impl IntoResponse {
+pub async fn handle_api_auth(Json(query): Json<WebInput>) -> impl IntoResponse {
     let user = match basicauth::login(query.email.clone(), query.password.clone()).await {
         Some(u) => u,
         None => {
@@ -284,38 +274,3 @@ pub async fn handle_api_auth(Query(query): Query<WebInput>) -> impl IntoResponse
         _ => return Json(FailOrSucc::Failure(String::from("Incorrect endpoint"))),
     }
 }
-
-pub async fn handle_get_website(Query(query): Query<WebInput>) -> Json<WebOutput> {
-    match query.function {
-        WebQuery::Login => {
-            let mut user = match basicauth::login(query.email, query.password).await {
-                Some(u) => u,
-                None => {
-                    return Json(WebOutput { user: None });
-                }
-            };
-            return Json(WebOutput {
-                user: Some(HiddenUser::from_user(&mut user).await),
-            });
-        }
-        _ => Json(WebOutput { user: None }),
-    }
-}
-
-/*------Unauthorised String returning functions------*/
-
-// fn unauthorised_apikey() -> Json<Output> {
-//     let response = Output {
-//         code: 401,
-//         output: json!("Unauthorized"),
-//     };
-//     return Json(response);
-// }
-
-//fn unauthorised_field_provided() -> Json<Output> {
-//    let response = Output {
-//        code: 403,
-//        output: json!("error: Unauthorised field provided."),
-//    };
-//    return Json(response);
-//}

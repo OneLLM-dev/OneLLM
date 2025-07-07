@@ -20,9 +20,9 @@ pub struct WebInput {
     pub name: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Debug, Serialize)]
 pub struct WebOutput {
-    pub user: Option<HiddenUser>,
+    pub user: HiddenUser,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -64,4 +64,5 @@ pub enum FailOrSucc {
     Successful(String),
     SuccessData(String),
     SuccessVecData(Vec<String>),
+    User(WebOutput),
 }
