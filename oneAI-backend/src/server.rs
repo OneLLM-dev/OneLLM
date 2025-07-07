@@ -3,12 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tokio;
 use tower_http::cors::{Any, CorsLayer};
 
-use axum::{
-    Json, Router,
-    http::header::HeaderMap,
-    response::IntoResponse,
-    routing::post,
-};
+use axum::{Json, Router, http::header::HeaderMap, response::IntoResponse, routing::post};
 
 use tower_http::services::ServeDir;
 
@@ -28,7 +23,7 @@ pub async fn server() {
         .allow_headers(Any);
 
     let app = Router::new()
-        .fallback_service(ServeDir::new("../OneLLM-Website/"))
+        .fallback_service(ServeDir::new("OneLLM-Website/"))
         .route("/api", post(handle_api))
         .route("/post-backend", post(handle_post_website))
         .route("/apikey-commands", post(handle_api_auth))
@@ -208,7 +203,6 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
                     return Json(FailOrSucc::Failure("Could not log user in".to_string()));
                 }
             };
-
 
             let hidden_user = WebOutput {
                 user: HiddenUser::from_user(&mut user).await,

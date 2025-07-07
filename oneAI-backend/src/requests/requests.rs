@@ -1,10 +1,7 @@
 #![allow(non_snake_case)]
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    requests::parseapi::{APIInput},
-    utils::User,
-};
+use crate::{requests::parseapi::APIInput, utils::User};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum AIProvider {
@@ -34,7 +31,7 @@ impl APIInput {
         let user = User::get_row_api(apikey.clone()).await?;
 
         let max_allowed = (user.balance as f32) * (1000000.0 / self.model.price());
-        
+
         if max_allowed < max_tokens as f32 {
             max_tokens = max_allowed as u32;
         }
