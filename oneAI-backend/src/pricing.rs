@@ -73,7 +73,6 @@ impl Model {
         }
     }
 
-    #[allow(unused)]
     pub fn price(&self) -> f32 {
         match self {
             // ==== OpenAI ====

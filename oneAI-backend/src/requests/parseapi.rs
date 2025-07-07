@@ -59,8 +59,8 @@ pub struct APIInput {
     pub endpoint: String,
     // Common fields
     pub model: Model,
-    pub temperature: f64,
-    pub stream: bool,
+    pub temperature: Option<f64>,
+    pub stream: Option<bool>,
     pub messages: Vec<Message>,
     pub max_tokens: u32,
     pub top_p: f64,
@@ -105,15 +105,15 @@ pub trait Input {
     async fn into_provider_request(self) -> serde_json::Value;
 }
 
-impl Input for APIInput {
-    async fn into_provider_request(self) -> serde_json::Value {
+impl APIInput {
+    pub async fn into_provider_request(self, maxtoken: u32) -> serde_json::Value {
         match self.model.provider() {
             AIProvider::OpenAI => {
                 json!({
                     "model": self.model.name(),
                     "messages": self.messages,
                     "temperature": self.temperature,
-                    "max_tokens": self.max_tokens,
+                    "max_tokens": maxtoken,
                     "top_p": self.top_p,
                     "stop": self.stop_sequences,
                     "stream": self.stream,
@@ -143,7 +143,7 @@ impl Input for APIInput {
                     "model": self.model.name(),
                     "messages": messages,
                     "temperature": self.temperature,
-                    "max_tokens": self.max_tokens,
+                    "max_tokens": maxtoken,
                     "top_p": self.top_p,
                     "stop_sequences": self.stop_sequences,
                     "stream": self.stream,
@@ -174,7 +174,7 @@ impl Input for APIInput {
                         "top_p": self.top_p,
                         "top_k": self.generation_config.as_ref().map(|cfg| cfg.top_k),
                         "candidate_count": self.generation_config.as_ref().map(|cfg| cfg.candidate_count),
-                        "max_output_tokens": self.max_tokens,
+                        "max_output_tokens": maxtoken,
                         "stop_sequences": self.stop_sequences,
                     },
                     "tools": self.tools,
@@ -190,7 +190,7 @@ impl Input for APIInput {
                     "model": model,
                     "messages": self.messages,
                     "temperature": self.temperature,
-                    "max_tokens": self.max_tokens,
+                    "max_tokens": maxtoken,
                     "top_p": self.top_p,
                     "stop": self.stop_sequences,
                     "stream": self.stream,
