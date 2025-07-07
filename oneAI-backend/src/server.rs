@@ -214,8 +214,6 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
                 user: HiddenUser::from_user(&mut user).await,
             };
 
-            println!("Hidden User: {:#?}", hidden_user);
-
             return Json(FailOrSucc::User(hidden_user));
         }
         _ => {
