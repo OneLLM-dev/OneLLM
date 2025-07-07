@@ -101,10 +101,6 @@ pub struct APIInput {
     pub top_k: Option<u32>,
 }
 
-pub trait Input {
-    async fn into_provider_request(self) -> serde_json::Value;
-}
-
 impl APIInput {
     pub async fn into_provider_request(self, maxtoken: u32) -> serde_json::Value {
         match self.model.provider() {
