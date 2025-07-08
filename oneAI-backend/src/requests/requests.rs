@@ -1,5 +1,15 @@
 #![allow(non_snake_case)]
+#[allow(unused)]
+use crate::{
+    auth::basicauth::update_bal,
+    requests::responseparser::{
+        anthropic::ClaudeMessageResponse, common::LlmUnifiedResponse, deepseek::DeepSeekResponse,
+        gemini::GeminiResponse, openai::OpenAIResponse,
+    },
+};
+use reqwest::Error;
 use serde::{Deserialize, Serialize};
+use serde_json::from_str;
 
 use crate::{requests::parseapi::APIInput, utils::User};
 
@@ -12,7 +22,7 @@ pub enum AIProvider {
 }
 
 impl APIInput {
-    pub async fn get(&self) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn get(&self) -> Result<LlmUnifiedResponse, Box<dyn std::error::Error>> {
         let mut endpoint = self.endpoint.clone();
         let apikey = match self.model.provider() {
             AIProvider::OpenAI => std::env::var("OPENAI").expect("Error getting OPENAI apikey"),
@@ -30,7 +40,15 @@ impl APIInput {
 
         let user = User::get_row_api(apikey.clone()).await?;
 
-        let max_allowed = (user.balance as f32) * (1000000.0 / self.model.price());
+        if user.balance <= 0 {
+            return Err(
+                "Insufficient balance, please topup your balance to continue using OneLLM".into(),
+            );
+        }
+
+        let price = self.model.price();
+
+        let max_allowed = (user.balance as f32) * (1000000.0 / price);
 
         if max_allowed < max_tokens as f32 {
             max_tokens = max_allowed as u32;
@@ -40,15 +58,54 @@ impl APIInput {
 
         let resp = client.post(endpoint).json(request);
 
+        let output: Result<String, Error>;
+
         match self.model.provider() {
             AIProvider::Gemini => {
-                let output = resp.send().await?.text().await;
-                return Ok(output?);
+                //                output = resp.send().await?.text().await;
+                return Err("Gemini isn't available at this moment (OneLLM's response)".into());
+            }
+            AIProvider::Anthropic => {
+                output = resp.header("x-api-key", apikey).send().await?.text().await;
             }
             _ => {
-                let output = resp.bearer_auth(apikey).send().await?.text().await;
-                return Ok(output?);
+                output = resp.bearer_auth(apikey).send().await?.text().await;
             }
+        }
+
+        let total: u32;
+        let unified_response: LlmUnifiedResponse = match self.model.provider() {
+            AIProvider::OpenAI => {
+                let openai: OpenAIResponse = from_str(&output?)?;
+                total = openai.usage.total_tokens;
+                openai.into()
+            }
+            AIProvider::Anthropic => {
+                let claude: ClaudeMessageResponse = from_str(&output?)?;
+                total = claude.usage.input_tokens + claude.usage.output_tokens;
+                claude.into()
+            }
+            AIProvider::Gemini => {
+                return Err("Gemini isn't available at this moment (OneLLM's response)".into());
+
+                //                let gemini: GeminiResponse = from_str(&output?)?;
+                //                let total = gemini
+                //                    .usage_metadata
+                //                    .as_ref()
+                //                    .map(|u| u.total_token_count)
+                //                    .unwrap_or(0);
+                //
+                //                gemini.into()
+            }
+            AIProvider::DeepSeek => {
+                let deepseek: DeepSeekResponse = from_str(&output?)?;
+                total = deepseek.usage.total_tokens;
+                deepseek.into()
+            }
+        };
+        match update_bal(user.email, (price / 1000000.0) * total as f32).await {
+            Some(_) => return Ok(unified_response),
+            None => return Err("An Unexpected error occurred".into()),
         }
     }
 }

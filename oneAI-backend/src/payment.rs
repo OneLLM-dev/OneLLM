@@ -67,7 +67,7 @@ pub async fn handle_webhook(StripeEvent(event): StripeEvent) {
 
                 println!("Amount total: {:?}", amount_total);
 
-                update_bal(email.to_owned(), amount_total as i32)
+                update_bal(email.to_owned(), amount_total as f32)
                     .await
                     .expect("Error update_bal");
             }

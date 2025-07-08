@@ -31,13 +31,6 @@ pub struct Output {
     pub output: Value,
 }
 
-#[derive(Deserialize, Serialize)]
-pub struct Data {
-    pub max_tokens: u128,
-}
-
-// Users:
-
 #[allow(unused)]
 pub enum TableFields {
     Email,

@@ -28,7 +28,7 @@ pub async fn signup(email: String, password: String) -> Option<User> {
     Some(user)
 }
 
-pub async fn update_bal(email: String, change: i32) -> Option<User> {
+pub async fn update_bal(email: String, change: f32) -> Option<User> {
     println!("email: {}\n change: {}", email, change);
     let user = match User::get_row(email).await {
         Ok(a) => a,
