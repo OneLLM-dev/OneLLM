@@ -43,7 +43,8 @@ impl User {
         let url = env::var("POSTGRES")?;
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        sqlx::query!("UPDATE users SET verified = TRUE WHERE email = $1", email)
+        sqlx::query("UPDATE users SET verified = TRUE WHERE email = $1")
+            .bind(email)
             .execute(&pool)
             .await?;
 
