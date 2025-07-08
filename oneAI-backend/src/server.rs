@@ -10,12 +10,14 @@ use tower_http::services::ServeDir;
 use serde_json::json;
 
 use crate::{
-    auth::basicauth::{self},
+    auth::{
+        basicauth::{self},
+        twofa::{self, send_verify},
+    },
     requests::parseapi::APIInput,
 };
 use crate::{payment, utils::*};
 
-#[allow(unused)]
 pub async fn server() {
     let cors = CorsLayer::new()
         .allow_origin(Any) // Allow all origins (good for development)
@@ -26,6 +28,8 @@ pub async fn server() {
         .fallback_service(ServeDir::new("OneLLM-Website/"))
         .route("/api", post(handle_api))
         .route("/post-backend", post(handle_post_website))
+        .route("/verify-email", post(verify_email))
+        .route("/check-verify", post(verify_code))
         .route("/apikey-commands", post(handle_api_auth))
         .route("/webhook", post(payment::handle_webhook))
         .layer(cors);
@@ -34,6 +38,60 @@ pub async fn server() {
 
     println!("Listening at: {}", ipaddr);
     axum::serve(listener, app).await.unwrap();
+}
+
+pub async fn verify_email(Json(payload): Json<VerifyInput>) -> Json<FailOrSucc> {
+    let mut redis = redis::Client::open(
+        std::env::var("REDIS")
+            .expect("Redis ENV VAR not found")
+            .as_str(),
+    )
+    .expect("Unable to connect to redis")
+    .get_multiplexed_async_connection()
+    .await
+    .expect("Unable to get MultiplexedAsyncConnection");
+
+    match send_verify(&mut redis, &payload.email).await {
+        Ok(()) => {
+            return Json(FailOrSucc::Successful("Successful".to_string()));
+        }
+        Err(e) => {
+            return Json(FailOrSucc::Failure(e.to_string()));
+        }
+    };
+}
+
+pub async fn verify_code(Json(payload): Json<VerifyInput>) -> Json<FailOrSucc> {
+    let mut redis = redis::Client::open(
+        std::env::var("REDIS")
+            .expect("Redis ENV VAR not found")
+            .as_str(),
+    )
+    .expect("Unable to connect to redis")
+    .get_multiplexed_async_connection()
+    .await
+    .expect("Unable to get MultiplexedAsyncConnection");
+
+    let did_verify = match twofa::verify_code(
+        &mut redis,
+        &payload.email,
+        &payload.code.unwrap_or("".to_string()),
+    )
+    .await
+    {
+        Ok(a) => a,
+        Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+    };
+
+    if did_verify {
+        match User::verify_user(&payload.email).await {
+            Ok(()) => return Json(FailOrSucc::Successful("Successful".to_string())),
+
+            Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+        }
+    } else {
+        Json(FailOrSucc::Failure("Verification unsuccessful".to_string()))
+    }
 }
 
 const MAX_TOKENS: f64 = 40.0;
@@ -195,6 +253,7 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
                     )));
                 }
             }
+
         }
         WebQuery::Login => {
             let mut user = match basicauth::login(query.email, query.password).await {
@@ -227,6 +286,10 @@ pub async fn handle_api_auth(Json(query): Json<WebInput>) -> impl IntoResponse {
             ));
         }
     };
+
+    if !user.is_verified().await.expect("Error trying to see if user was verified") {
+        return Json(FailOrSucc::Failure("User isn't verified".to_string()));
+    }
 
     match query.function {
         WebQuery::NewAPI => match user

@@ -2,7 +2,8 @@ create table users (
     id serial primary key,
     email varchar not null unique,
     password varchar not null,
-    balance integer not null default 0
+    balance integer not null default 0,
+    verified boolean not null default false
 );
 
 -- API KEYS TABLE
