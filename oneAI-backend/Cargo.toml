@@ -17,6 +17,7 @@ tower = { version = "0.5.2", features = ["limit"] }
 tower-http = { version = "0.6.2", features = ["cors", "fs"] }
 http = "1.3.1"
 dotenv = "0.15.0"
-totp-rs = "5.7.0"
+totp-rs = { version = "5.7.0", features = ["gen_secret", "otpauth", "qr"] }
 async-stripe = { version = "0.41.0", features = ["events", "runtime-tokio-hyper", "webhook-events"] }
 redis = { version = "0.32.3", features = ["tokio-comp", "aio"] }
+lettre = "0.11"

@@ -1,4 +1,3 @@
-// use sqlx::{Pool, Postgres, Row};
 use dotenv::dotenv;
 use sqlx::Row;
 use std::env;
@@ -18,6 +17,38 @@ impl std::fmt::Display for MissingUser {
 }
 
 impl User {
+    pub async fn is_verified(&self) -> Result<bool, Box<dyn Error>> {
+        if std::env::var("CI").is_err() {
+            dotenv().ok();
+        }
+
+        let url = std::env::var("POSTGRES")?;
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+        let row = sqlx::query("SELECT verified FROM users WHERE email = $1")
+            .bind(&self.email)
+            .fetch_optional(&pool)
+            .await?;
+
+        match row {
+            Some(row) => Ok(row.get::<bool, _>("verified")),
+            None => Ok(false), // Or Err("User not found") if you prefer
+        }
+    }
+    pub async fn verify_user(email: &str) -> Result<(), Box<dyn Error>> {
+        if std::env::var("CI").is_err() {
+            dotenv().ok();
+        }
+
+        let url = env::var("POSTGRES")?;
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+        sqlx::query!("UPDATE users SET verified = TRUE WHERE email = $1", email)
+            .execute(&pool)
+            .await?;
+
+        Ok(())
+    }
     pub async fn count_apikey(email: &str) -> Result<i64, Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
