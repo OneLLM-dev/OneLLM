@@ -27,7 +27,6 @@ impl APIInput {
         onellm_apikey: String,
     ) -> Result<LlmUnifiedResponse, Box<dyn std::error::Error>> {
         dotenv::dotenv().ok();
-        println!("Get was called");
         let mut endpoint = self.endpoint.clone();
         let apikey = match self.model.provider() {
             AIProvider::OpenAI => std::env::var("OPENAI").expect("Error getting OPENAI apikey"),
@@ -45,17 +44,16 @@ impl APIInput {
 
         let user = User::get_row_api(onellm_apikey).await?;
 
-        if user.balance <= 0 {
+        if user.balance <= 1000000 {
             return Err(
                 "Insufficient balance, please topup your balance to continue using OneLLM".into(),
             );
         }
 
         let price = self.model.price();
+        let max_allowed = (user.balance as u64) * (1000000 / price as u64);
 
-        let max_allowed = (user.balance as f32) * (1000000.0 / price);
-
-        if max_allowed < max_tokens as f32 {
+        if max_allowed < max_tokens as u64 {
             max_tokens = max_allowed as u32;
         }
 
@@ -108,7 +106,7 @@ impl APIInput {
                 deepseek.into()
             }
         };
-        match update_bal(user.email, (price / 1000000.0) * total as f32).await {
+        match update_bal(user.email, -1 * (price * total) as i32).await {
             Some(_) => return Ok(unified_response),
             None => return Err("An Unexpected error occurred".into()),
         }
