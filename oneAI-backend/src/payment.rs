@@ -48,30 +48,26 @@ pub async fn handle_webhook(StripeEvent(event): StripeEvent) {
     match event.type_ {
         EventType::CheckoutSessionCompleted => {
             if let EventObject::CheckoutSession(session) = event.data.object {
-                println!("Details: {:#?}", session.customer_details);
                 let details = match &session.customer_details {
                     Some(d) => d,
                     None => return,
                 };
 
-                println!("Email: {:#?}", details.email);
                 let email = match &details.email {
                     Some(e) => e,
                     None => return,
                 };
 
                 let amount_total = match session.amount_total {
-                    Some(a) => a / 100,
+                    Some(a) => a * 10000,
                     None => return,
                 };
 
-                println!("Amount total: {:?}", amount_total);
-
-                update_bal(email.to_owned(), amount_total as f32)
+                update_bal(email.to_owned(), amount_total as i32)
                     .await
-                    .expect("Error update_bal");
+                    .expect("Error while updating balance from stripe");
             }
         }
-        _ => println!("Unknown event encountered in webhook: {:?}", event.type_),
+        _ => {}
     }
 }

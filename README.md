@@ -9,7 +9,7 @@
 ```zsh
 curl -X POST http://127.0.0.1:3000/api \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer oa-73762742619527358232" \
+  -H "Authorization: Bearer oa-43438316878177947386" \
   -d '{
     "endpoint": "https://api.deepseek.com/chat/completions",
     "model": "DeepSeek-Chat",
@@ -26,7 +26,7 @@ curl -X POST http://127.0.0.1:3000/api \
     "logprobs": false,
     "top_logprobs": null
   }'
-```
+  ```
 
 ### Gemini (API Key auth isn't working, but parsing and everything else is working): 
 ### Gemini has been disabled and will only be activated later once the oauth2 is fixed

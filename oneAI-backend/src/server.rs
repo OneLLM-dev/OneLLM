@@ -258,19 +258,18 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
             }
         }
 
-        WebQuery::ChangePwd => {
-            match User::change_password(&query.token.unwrap_or("".to_string()), query.password)
-                .await
-            {
-                Ok(_) => {
-                    return Json(FailOrSucc::Successful(
-                        "Successfully changed password".to_string(),
-                    ));
-                }
-                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
-            }
-        }
-
+        //        WebQuery::ChangePwd => {
+        //            match User::change_password(&query.token.unwrap_or("".to_string()), query.password)
+        //                .await
+        //            {
+        //                Ok(_) => {
+        //                    return Json(FailOrSucc::Successful(
+        //                        "Successfully changed password".to_string(),
+        //                    ));
+        //                }
+        //                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+        //            }
+        //        }
         WebQuery::Login => {
             let mut user = match basicauth::login(query.email, query.password).await {
                 Some(u) => u,
@@ -278,6 +277,8 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
                     return Json(FailOrSucc::Failure("Could not log user in".to_string()));
                 }
             };
+
+            user.balance /= 1_000_000;
 
             let token = match User::new_token(user.id).await {
                 Ok(tok) => tok,
@@ -300,10 +301,11 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
 }
 
 async fn login_with_token(Json(query): Json<TokenInput>) -> Json<FailOrSucc> {
-    let hidden_user = match User::from_token(query.token.clone()).await {
+    let mut hidden_user = match User::from_token(query.token.clone()).await {
         Ok(huser) => huser,
         Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
     };
+    hidden_user.balance /= 1_000_000;
     return Json(FailOrSucc::User(WebOutput {
         user: hidden_user,
         token: query.token,

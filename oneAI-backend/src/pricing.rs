@@ -73,35 +73,35 @@ impl Model {
         }
     }
 
-    pub fn price(&self) -> f32 {
+    pub fn price(&self) -> u32 {
         match self {
             // ==== OpenAI ====
-            Model::Gpt4_1 => 10.4,
-            Model::Gpt4_1Mini => 2.08,
-            Model::Gpt4_1Nano => 0.52,
-            Model::GptO3 => 10.4,
-            Model::GptO4Mini => 5.72,
+            Model::Gpt4_1 => 1040,
+            Model::Gpt4_1Mini => 208,
+            Model::Gpt4_1Nano => 52,
+            Model::GptO3 => 1040,
+            Model::GptO4Mini => 572,
 
             // ==== Anthropic ====
-            Model::ClaudeOpus4 => 93.6,
-            Model::ClaudeSonnet4 => 18.72,
-            Model::ClaudeHaiku3_5 => 4.992,
-            Model::ClaudeOpus3 => 93.6,
-            Model::ClaudeSonnet3_7 => 18.72,
-            Model::ClaudeHaiku3 => 1.82,
+            Model::ClaudeOpus4 => 9360,
+            Model::ClaudeSonnet4 => 1872,
+            Model::ClaudeHaiku3_5 => 499,
+            Model::ClaudeOpus3 => 9360,
+            Model::ClaudeSonnet3_7 => 1872,
+            Model::ClaudeHaiku3 => 182,
 
             // ==== DeepSeek ====
-            Model::DeepSeekR1 => 1.4248,
-            Model::DeepSeekV3 => 2.4232,
+            Model::DeepSeekR1 => 142,
+            Model::DeepSeekV3 => 242,
 
             // ==== Gemini (Google) ====
-            Model::Gemini25FlashPreview => 3.796,
-            Model::Gemini25ProPreview => 18.2,
-            Model::Gemini20Flash => 0.52,
-            Model::Gemini20FlashLite => 0.39,
-            Model::Gemini15Flash => 0.78,
-            Model::Gemini15Flash8B => 0.39,
-            Model::Gemini15Pro => 13.0,
+            Model::Gemini25FlashPreview => 379,
+            Model::Gemini25ProPreview => 1820,
+            Model::Gemini20Flash => 52,
+            Model::Gemini20FlashLite => 39,
+            Model::Gemini15Flash => 78,
+            Model::Gemini15Flash8B => 39,
+            Model::Gemini15Pro => 1300,
         }
     }
 

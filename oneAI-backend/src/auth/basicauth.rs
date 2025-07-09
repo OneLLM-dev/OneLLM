@@ -30,12 +30,10 @@ pub async fn signup(email: String, password: String) -> Option<User> {
     Some(user)
 }
 
-pub async fn update_bal(email: String, change: f32) -> Option<User> {
-    println!("email: {}\n change: {}", email, change);
+pub async fn update_bal(email: String, change: i32) -> Option<User> {
     let user = match User::get_row(email).await {
         Ok(a) => a,
-        Err(e) => {
-            eprintln!("e: {e}");
+        Err(_) => {
             return None;
         }
     };
@@ -43,16 +41,14 @@ pub async fn update_bal(email: String, change: f32) -> Option<User> {
     match user
         .update_db(
             TableFields::Balance,
-            &(user.balance + change as u32).to_string(),
+            &(user.balance as i32 + change).to_string(),
         )
         .await
     {
         Ok(_) => {
-            println!("It went through");
             return Some(user);
         }
-        Err(e) => {
-            eprintln!("Error: {e}");
+        Err(_) => {
             return None;
         }
     }

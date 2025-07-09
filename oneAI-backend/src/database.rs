@@ -92,6 +92,7 @@ impl User {
         Ok(token)
     }
 
+    #[allow(unused)]
     pub async fn verify_token(payload: &TokenInput) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
@@ -255,7 +256,6 @@ impl User {
         Ok(new_key)
     }
     pub async fn get_row_api(apikey: String) -> Result<User, Box<dyn Error>> {
-        println!("Looking up user for API key: '{}'", apikey);
         if std::env::var("CI").is_err() {
             dotenv().ok();
         }
@@ -283,7 +283,6 @@ impl User {
                 verified: record.get("verified"),
             })
         } else {
-            eprintln!("Could not find user");
             Err(Box::new(MissingUser("No such user was found".to_string())))
         }
     }
@@ -314,10 +313,11 @@ impl User {
                 verified: record.get("verified"),
             })
         } else {
-            Err(Box::new(MissingUser("No such user was found".to_string())))
+            Err(Box::new(MissingUser("Invalid apikey".to_string())))
         }
     }
 
+    #[allow(unused)]
     pub async fn change_password(token: &str, new_password: String) -> Result<(), Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
