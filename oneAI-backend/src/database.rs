@@ -92,6 +92,52 @@ impl User {
         Ok(token)
     }
 
+    pub async fn verify_token(payload: &TokenInput) -> Result<(), Box<dyn Error>> {
+        if std::env::var("CI").is_err() {
+            dotenv().ok();
+        }
+
+        let url = env::var("POSTGRES")?;
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+        // Check if token exists and is not expired
+        let session_row =
+            sqlx::query("SELECT user_id FROM sessions WHERE token = $1 AND expires_at > NOW()")
+                .bind(&payload.token)
+                .fetch_optional(&pool)
+                .await?;
+
+        let user_id = match session_row {
+            Some(row) => row.get::<i32, _>("user_id"),
+            None => return Err("Invalid or expired token".into()),
+        };
+
+        // Get user email if not in payload
+        let email = if let Some(email) = &payload.email {
+            email.clone()
+        } else {
+            let row = sqlx::query("SELECT email FROM users WHERE id = $1")
+                .bind(user_id)
+                .fetch_one(&pool)
+                .await?;
+            row.get::<String, _>("email")
+        };
+
+        // Mark user as verified
+        sqlx::query("UPDATE users SET verified = TRUE WHERE email = $1")
+            .bind(email)
+            .execute(&pool)
+            .await?;
+
+        // Optionally mark session as verified too
+        sqlx::query("UPDATE sessions SET verified = TRUE WHERE token = $1")
+            .bind(&payload.token)
+            .execute(&pool)
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn is_verified(&self) -> Result<bool, Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
@@ -209,6 +255,7 @@ impl User {
         Ok(new_key)
     }
     pub async fn get_row_api(apikey: String) -> Result<User, Box<dyn Error>> {
+        println!("Looking up user for API key: '{}'", apikey);
         if std::env::var("CI").is_err() {
             dotenv().ok();
         }
@@ -216,8 +263,10 @@ impl User {
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
         let row = sqlx::query(
-            "SELECT u.email, u.password, u.balance FROM users u \
-             JOIN api_keys a ON u.id = a.user_id WHERE a.key = $1",
+            "SELECT users.id, users.email, users.password, users.balance, users.verified \
+     FROM users \
+     JOIN api_keys a ON users.id = a.user_id \
+     WHERE a.key = $1",
         )
         .bind(apikey)
         .fetch_optional(&pool)
@@ -234,6 +283,7 @@ impl User {
                 verified: record.get("verified"),
             })
         } else {
+            eprintln!("Could not find user");
             Err(Box::new(MissingUser("No such user was found".to_string())))
         }
     }
@@ -268,6 +318,56 @@ impl User {
         }
     }
 
+    pub async fn change_password(token: &str, new_password: String) -> Result<(), Box<dyn Error>> {
+        if std::env::var("CI").is_err() {
+            dotenv().ok();
+        }
+
+        let url = env::var("POSTGRES")?;
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+        // Check if token is verified and not expired
+        let verified =
+            sqlx::query("SELECT verified FROM sessions WHERE token = $1 AND expires_at > NOW()")
+                .bind(token)
+                .fetch_optional(&pool)
+                .await?
+                .map(|r| r.get::<bool, _>("verified"))
+                .unwrap_or(false);
+
+        if !verified {
+            return Err("Attempt at using unverified or expired token".into());
+        }
+
+        // Get user email from session
+        let row = sqlx::query("SELECT user_id FROM sessions WHERE token = $1")
+            .bind(token)
+            .fetch_one(&pool)
+            .await?;
+
+        let user_id: i32 = row.get("user_id");
+
+        // Get full user row from users table
+        let user_row =
+            sqlx::query("SELECT id, email, password, balance, verified FROM users WHERE id = $1")
+                .bind(user_id)
+                .fetch_one(&pool)
+                .await?;
+
+        // Construct the User object
+        let user = User {
+            id: user_row.get("id"),
+            email: user_row.get("email"),
+            password: user_row.get("password"),
+            balance: user_row.get::<i32, _>("balance") as u32,
+            verified: user_row.get("verified"),
+        };
+
+        // Call the update method on the user to update password
+        user.update_db(TableFields::Password, &new_password).await?;
+
+        Ok(())
+    }
     pub async fn get_keynames(email: &str) -> Result<Vec<String>, Box<dyn Error>> {
         // Load .env unless running in CI
         if std::env::var("CI").is_err() {

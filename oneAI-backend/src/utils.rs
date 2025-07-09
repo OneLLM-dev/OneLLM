@@ -15,6 +15,12 @@ pub struct Claims {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub enum VerificationOption {
+    Token,
+    Email,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub enum WebQuery {
     Login,
     Signup,
@@ -23,6 +29,8 @@ pub enum WebQuery {
     DelAPI,
     DelAllAPI,
     APICount,
+    ChangePwd,
+    VerifyToken,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
