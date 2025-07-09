@@ -9,7 +9,7 @@
 ```zsh
 curl -X POST http://127.0.0.1:3000/api \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer oa-28366171116533564198" \
+  -H "Authorization: Bearer oa-73762742619527358232" \
   -d '{
     "endpoint": "https://api.deepseek.com/chat/completions",
     "model": "DeepSeek-Chat",
