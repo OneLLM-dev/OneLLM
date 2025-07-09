@@ -35,7 +35,6 @@ pub async fn send_verify(
     .unwrap();
 
     let code = totp.generate_current().unwrap();
-    println!("Code: {code}");
 
     let body = include_str!("verify.html")
         .replace("{{ YEAR }}", "2025")
@@ -51,10 +50,7 @@ pub async fn send_verify(
         .body(body)
         .unwrap();
 
-    let creds = Credentials::new(
-        "OneLLM.dev@gmail.com".to_owned(),
-        std::env::var("GMAIL")?,
-    );
+    let creds = Credentials::new("OneLLM.dev@gmail.com".to_owned(), std::env::var("GMAIL")?);
 
     // Open a remote connection to gmail
     let mailer = SmtpTransport::relay("smtp.gmail.com")

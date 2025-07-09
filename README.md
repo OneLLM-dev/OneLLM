@@ -1,14 +1,8 @@
 # OneLLM:
 
 ## TODO List:
-1. Deduct balance upon API Request IMPORTANT
-1. Add STRIPE integration IMPORTANT
-1. ApiKey in website should not be placholders. 
 1. Make Proposal for 5k for testing and Beta launch
-1. Use ~~SRP2~~ TLS
-1. Fix up website (mostly done, just a few things left)
-1. 2FA fixed (delay to after launch)
-1. Add rate limits
+1. Use tokens for security reasons
 
 ## Testing commands:
 ### DeepSeek:
@@ -35,6 +29,7 @@ curl -X POST http://127.0.0.1:3000/api \
 ```
 
 ### Gemini (API Key auth isn't working, but parsing and everything else is working): 
+### Gemini has been disabled and will only be activated later once the oauth2 is fixed
 
 ```zsh
 curl -X POST http://127.0.0.1:3000/api \

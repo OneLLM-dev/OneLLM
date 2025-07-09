@@ -18,6 +18,8 @@ use crate::{
 };
 use crate::{payment, utils::*};
 
+#[axum::debug_handler]
+
 pub async fn server() {
     let cors = CorsLayer::new()
         .allow_origin(Any) // Allow all origins (good for development)
@@ -31,6 +33,7 @@ pub async fn server() {
         .route("/verify-email", post(verify_email))
         .route("/check-verify", post(verify_code))
         .route("/apikey-commands", post(handle_api_auth))
+        .route("/token-login", post(login_with_token))
         .route("/webhook", post(payment::handle_webhook))
         .layer(cors);
     let ipaddr = "0.0.0.0:3000";
@@ -253,7 +256,6 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
                     )));
                 }
             }
-
         }
         WebQuery::Login => {
             let mut user = match basicauth::login(query.email, query.password).await {
@@ -263,8 +265,14 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
                 }
             };
 
+            let token = match User::new_token(user.id).await {
+                Ok(tok) => tok,
+                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+            };
+
             let hidden_user = WebOutput {
                 user: HiddenUser::from_user(&mut user).await,
+                token,
             };
 
             return Json(FailOrSucc::User(hidden_user));
@@ -277,23 +285,41 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
     }
 }
 
-pub async fn handle_api_auth(Json(query): Json<WebInput>) -> impl IntoResponse {
-    let user = match basicauth::login(query.email.clone(), query.password.clone()).await {
-        Some(u) => u,
-        None => {
-            return Json(FailOrSucc::Failure(
-                "Error while trying to sign in".to_owned(),
-            ));
+async fn login_with_token(Json(query): Json<TokenInput>) -> Json<FailOrSucc> {
+    let hidden_user = match User::from_token(query.token.clone()).await {
+        Ok(huser) => huser,
+        Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+    };
+    return Json(FailOrSucc::User(WebOutput {
+        user: hidden_user,
+        token: query.token,
+    }));
+}
+
+pub async fn handle_api_auth(Json(payload): Json<TokenInput>) -> impl IntoResponse {
+    let res = match User::from_token(payload.token.clone()).await {
+        Ok(u) => u,
+        Err(e) => {
+            return Json(FailOrSucc::Failure(e.to_string()));
         }
     };
 
-    if !user.is_verified().await.expect("Error trying to see if user was verified") {
+    let user = match User::get_row(res.email).await {
+        Ok(a) => a,
+        Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+    };
+
+    if !user
+        .is_verified()
+        .await
+        .expect("Error trying to see if user was verified")
+    {
         return Json(FailOrSucc::Failure("User isn't verified".to_string()));
     }
 
-    match query.function {
+    match payload.function {
         WebQuery::NewAPI => match user
-            .generate_apikey(&query.name.unwrap_or("".to_owned()))
+            .generate_apikey(&payload.name.unwrap_or("".to_owned()))
             .await
         {
             Ok(api) => return Json(FailOrSucc::SuccessData(api)),
@@ -302,9 +328,8 @@ pub async fn handle_api_auth(Json(query): Json<WebInput>) -> impl IntoResponse {
 
         WebQuery::DelAPI => {
             match User::delete_apikey(
-                &query.email,
-                &query.password,
-                &query.name.unwrap_or("".to_string()),
+                &payload.token,
+                Some(&payload.name.unwrap_or("".to_string())),
                 false,
             )
             .await
@@ -314,18 +339,19 @@ pub async fn handle_api_auth(Json(query): Json<WebInput>) -> impl IntoResponse {
             }
         }
 
-        WebQuery::APICount => match User::get_keynames(&query.email).await {
-            Ok(keynamevec) => return Json(FailOrSucc::SuccessVecData(keynamevec)),
-            Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
-        },
-
-        WebQuery::DelAllAPI => {
-            match User::delete_apikey(&user.email, &query.password, "", true).await {
-                Ok(()) => return Json(FailOrSucc::Successful("Successful operation".to_string())),
+        WebQuery::APICount => {
+            match User::get_keynames(&payload.email.unwrap_or("".to_string())).await {
+                Ok(keynamevec) => return Json(FailOrSucc::SuccessVecData(keynamevec)),
                 Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
             }
         }
 
+        //        WebQuery::DelAllAPI => {
+        //            match User::delete_apikey(&user.email, &payload.password, "", true).await {
+        //                Ok(()) => return Json(FailOrSucc::Successful("Successful operation".to_string())),
+        //                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+        //            }
+        //        }
         _ => return Json(FailOrSucc::Failure(String::from("Incorrect endpoint"))),
     }
 }
