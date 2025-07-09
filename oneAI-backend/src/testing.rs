@@ -20,9 +20,11 @@ mod tests {
         let unwrapped_hashed_user = match sign_result {
             Some(user) => user,
             None => crate::utils::User {
+                id: 0,
                 email: String::new(),
                 password: String::new(),
                 balance: 1,
+                verified: false,
             },
         };
 
