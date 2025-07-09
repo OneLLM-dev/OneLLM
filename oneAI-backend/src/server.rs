@@ -257,6 +257,20 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
                 }
             }
         }
+
+        WebQuery::ChangePwd => {
+            match User::change_password(&query.token.unwrap_or("".to_string()), query.password)
+                .await
+            {
+                Ok(_) => {
+                    return Json(FailOrSucc::Successful(
+                        "Successfully changed password".to_string(),
+                    ));
+                }
+                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+            }
+        }
+
         WebQuery::Login => {
             let mut user = match basicauth::login(query.email, query.password).await {
                 Some(u) => u,
