@@ -1,9 +1,11 @@
+use chrono::{Duration, Utc};
 use dotenv::dotenv;
+use jsonwebtoken::{EncodingKey, Header, encode};
 use sqlx::Row;
 use std::env;
 use std::error::Error;
 
-use crate::auth::basicauth::{generate_api, login};
+use crate::auth::basicauth::generate_api;
 use crate::{auth, utils::*};
 
 #[derive(Debug)]
@@ -17,6 +19,79 @@ impl std::fmt::Display for MissingUser {
 }
 
 impl User {
+    pub async fn from_token(token: String) -> Result<HiddenUser, Box<dyn Error>> {
+        if std::env::var("CI").is_err() {
+            dotenv().ok();
+        }
+
+        let url = std::env::var("POSTGRES")?;
+        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+        let row = sqlx::query(
+            r#"
+            SELECT u.id, u.email, u.password, u.balance, u.verified
+            FROM users u
+            INNER JOIN sessions s ON s.user_id = u.id
+            WHERE s.token = $1 AND s.expires_at > NOW()
+            "#,
+        )
+        .bind(&token)
+        .fetch_one(&pool)
+        .await?;
+
+        let bal: i32 = row.get("balance");
+        let mut user = User {
+            id: row.get("id"),
+            email: row.get("email"),
+            password: row.get("password"),
+            balance: bal as u32,
+            verified: row.get("verified"),
+        };
+
+        Ok(HiddenUser::from_user(&mut user).await)
+    }
+
+    pub async fn new_token(user_id: i32) -> Result<String, Box<dyn std::error::Error>> {
+        if std::env::var("CI").is_err() {
+            dotenv().ok();
+        }
+
+        let url = std::env::var("POSTGRES")?;
+        let pool = &sqlx::postgres::PgPool::connect(&url).await?;
+
+        let now = Utc::now();
+        let exp = now + Duration::hours(24);
+
+        let claims = Claims {
+            sub: user_id,
+            iat: now.timestamp() as usize,
+            exp: exp.timestamp() as usize,
+        };
+
+        let secret = std::env::var("JWT_SECRET")?;
+        let token = encode(
+            &Header::default(),
+            &claims,
+            &EncodingKey::from_secret(secret.as_ref()),
+        )?;
+
+        // Store token in `sessions` table
+        sqlx::query(
+            r#"
+        INSERT INTO sessions (user_id, token, created_at, expires_at)
+        VALUES ($1, $2, $3, $4)
+        "#,
+        )
+        .bind(user_id)
+        .bind(&token)
+        .bind(now)
+        .bind(exp)
+        .execute(pool)
+        .await?;
+
+        Ok(token)
+    }
+
     pub async fn is_verified(&self) -> Result<bool, Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
@@ -71,43 +146,43 @@ impl User {
     }
 
     pub async fn delete_apikey(
-        email: &str,
-        password: &str,
-        name: &str,
+        token: &str,
+        name: Option<&str>,
         all: bool,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
         }
-        let url = env::var("POSTGRES")?;
+
+        let url = std::env::var("POSTGRES")?;
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        if let None = login(email.to_string(), password.to_string()).await {
-            return Err("Couldnt log user in".into());
+        // 1. Decode JWT and get user_id
+        let token_data = jsonwebtoken::decode::<Claims>(
+            token,
+            &jsonwebtoken::DecodingKey::from_secret(std::env::var("JWT_SECRET")?.as_bytes()),
+            &jsonwebtoken::Validation::default(),
+        )?;
+        let user_id = token_data.claims.sub; // assuming `sub` is user_id
+
+        // 2. Delete all or one API key
+        let query = if all {
+            sqlx::query("DELETE FROM api_keys WHERE user_id = $1").bind(user_id)
+        } else {
+            let name = name.ok_or("Missing API key name when 'all' is false")?;
+            sqlx::query("DELETE FROM api_keys WHERE user_id = $1 AND name = $2")
+                .bind(user_id)
+                .bind(name)
         };
 
-        let mut deleted = sqlx::query(
-            "DELETE FROM api_keys \
-             WHERE name = $1 AND user_id = \
-             (SELECT id FROM users WHERE email = $2)",
-        );
+        let result = query.execute(&pool).await?;
 
-        if all {
-            deleted = sqlx::query(
-                "DELETE FROM api_keys \
-                WHERE user_id = (SELECT id FROM users WHERE email = $1)",
-            );
-        }
-
-        let executed = deleted.bind(name).bind(email).execute(&pool).await?;
-
-        if executed.rows_affected() == 0 {
-            return Err("API key not found or does not belong to the user.".into());
+        if result.rows_affected() == 0 {
+            return Err("No API key(s) found to delete.".into());
         }
 
         Ok(())
     }
-
     pub async fn generate_apikey(&self, name: &str) -> Result<String, Box<dyn Error>> {
         if std::env::var("CI").is_err() {
             dotenv().ok();
@@ -149,14 +224,14 @@ impl User {
         .await?;
 
         if let Some(record) = row {
-            let email: String = record.try_get("email")?;
-            let password: String = record.try_get("password")?;
             let balance: i32 = record.try_get("balance")?;
 
-            Ok(Self {
-                email,
-                password,
+            Ok(User {
+                id: record.get("id"),
+                email: record.get("email"),
+                password: record.get("password"),
                 balance: balance as u32,
+                verified: record.get("verified"),
             })
         } else {
             Err(Box::new(MissingUser("No such user was found".to_string())))
@@ -171,21 +246,22 @@ impl User {
         let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
         let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
-        let row = sqlx::query("SELECT email, password, balance FROM users WHERE email = $1")
-            .bind(&email)
-            .fetch_optional(&pool)
-            .await?;
+        let row = sqlx::query(
+            "SELECT id, email, password, balance, verified FROM users WHERE email = $1",
+        )
+        .bind(&email)
+        .fetch_optional(&pool)
+        .await?;
 
         if let Some(record) = row {
-            let password: String = record.try_get("password")?;
             let balance: i32 = record.try_get("balance")?;
 
-            //let _key: String = record.try_get("key")?; // if you want to use it
-
-            Ok(Self {
-                email,
-                password,
+            Ok(User {
+                id: record.get("id"),
+                email: record.get("email"),
+                password: record.get("password"),
                 balance: balance as u32,
+                verified: record.get("verified"),
             })
         } else {
             Err(Box::new(MissingUser("No such user was found".to_string())))

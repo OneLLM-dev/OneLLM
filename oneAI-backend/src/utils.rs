@@ -8,6 +8,13 @@ pub struct VerifyInput {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct Claims {
+    pub sub: i32, // user_id
+    pub exp: usize,
+    pub iat: usize,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub enum WebQuery {
     Login,
     Signup,
@@ -19,16 +26,26 @@ pub enum WebQuery {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct TokenInput {
+    pub function: WebQuery,
+    pub token: String,
+    pub email: Option<String>,
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct WebInput {
     pub function: WebQuery,
     pub email: String,
     pub password: String,
     pub name: Option<String>,
+    pub token: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct WebOutput {
     pub user: HiddenUser,
+    pub token: String,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -46,9 +63,11 @@ pub enum TableFields {
 
 #[derive(PartialEq, Debug, Clone, Deserialize, Serialize)]
 pub struct User {
+    pub id: i32,
     pub email: String,
     pub password: String,
     pub balance: u32,
+    pub verified: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

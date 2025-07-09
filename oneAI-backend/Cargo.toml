@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = "0.8.3"
+axum = { version = "0.8.3", features = ["macros"] }
 reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
-sqlx = { version = "0.8.5", features = ["postgres", "runtime-tokio-rustls"] }
+sqlx = { version = "0.8.5", features = ["postgres", "runtime-tokio-rustls", "chrono"] }
 serde_json = "1.0.140"
 serde = "1.0.219"
 password-auth = "1.0.0"
@@ -21,3 +21,5 @@ totp-rs = { version = "5.7.0", features = ["gen_secret", "otpauth", "qr"] }
 async-stripe = { version = "0.41.0", features = ["events", "runtime-tokio-hyper", "webhook-events"] }
 redis = { version = "0.32.3", features = ["tokio-comp", "aio"] }
 lettre = "0.11"
+jsonwebtoken = "9.3.1"
+chrono = "0.4.41"

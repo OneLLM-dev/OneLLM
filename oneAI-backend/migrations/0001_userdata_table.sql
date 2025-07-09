@@ -14,4 +14,11 @@ CREATE TABLE api_keys (
     name VARCHAR(255) NOT NULL,
     CONSTRAINT unique_user_api_key_name UNIQUE (user_id, name)
 );
-create unique index email on users (email);
+
+CREATE TABLE sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMP NOT NULL
+);

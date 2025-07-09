@@ -19,9 +19,11 @@ pub async fn login(email: String, password: String) -> Option<User> {
 
 pub async fn signup(email: String, password: String) -> Option<User> {
     let mut user = User {
+        id: 0,
         email,
         password,
         balance: 0,
+        verified: false,
     };
     hash_user(&mut user);
 
