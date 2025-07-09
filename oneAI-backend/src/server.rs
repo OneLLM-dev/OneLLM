@@ -32,7 +32,7 @@ pub async fn server() {
         .route("/post-backend", post(handle_post_website))
         .route("/verify-email", post(verify_email))
         .route("/check-verify", post(verify_code))
-        .route("/apikey-commands", post(handle_api_auth))
+        .route("/apikey-commands", post(handle_token_auth))
         .route("/token-login", post(login_with_token))
         .route("/webhook", post(payment::handle_webhook))
         .layer(cors);
@@ -203,7 +203,7 @@ pub async fn handle_api(headers: HeaderMap, Json(payload): Json<APIInput>) -> Js
         }
     };
 
-    let output = match payload.get().await {
+    let output = match payload.get(apikey).await {
         Ok(result) => result,
         Err(_) => {
             return Json(Output {
@@ -296,7 +296,7 @@ async fn login_with_token(Json(query): Json<TokenInput>) -> Json<FailOrSucc> {
     }));
 }
 
-pub async fn handle_api_auth(Json(payload): Json<TokenInput>) -> impl IntoResponse {
+pub async fn handle_token_auth(Json(payload): Json<TokenInput>) -> impl IntoResponse {
     let res = match User::from_token(payload.token.clone()).await {
         Ok(u) => u,
         Err(e) => {

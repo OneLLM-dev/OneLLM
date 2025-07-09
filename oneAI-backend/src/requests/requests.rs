@@ -22,7 +22,12 @@ pub enum AIProvider {
 }
 
 impl APIInput {
-    pub async fn get(&self) -> Result<LlmUnifiedResponse, Box<dyn std::error::Error>> {
+    pub async fn get(
+        &self,
+        onellm_apikey: String,
+    ) -> Result<LlmUnifiedResponse, Box<dyn std::error::Error>> {
+        dotenv::dotenv().ok();
+        println!("Get was called");
         let mut endpoint = self.endpoint.clone();
         let apikey = match self.model.provider() {
             AIProvider::OpenAI => std::env::var("OPENAI").expect("Error getting OPENAI apikey"),
@@ -38,7 +43,7 @@ impl APIInput {
 
         let mut max_tokens = self.max_tokens;
 
-        let user = User::get_row_api(apikey.clone()).await?;
+        let user = User::get_row_api(onellm_apikey).await?;
 
         if user.balance <= 0 {
             return Err(
