@@ -21,7 +21,7 @@ jobs:
             set -e
 
             echo "🔄 Changing to project directory..."
-            cd /home/ubuntu/OneLLM
+            cd /home/ubuntu/OneLLM/OneLLM
 
             echo "📦 Pulling latest changes from Git..."
             git pull origin production
