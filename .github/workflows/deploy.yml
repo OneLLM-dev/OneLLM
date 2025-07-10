@@ -3,7 +3,7 @@ name: Deploy Rust App to EC2
 on:
   push:
     branches:
-      - production  # or your deployment branch
+      - production
 
 jobs:
   deploy:
@@ -23,6 +23,9 @@ jobs:
             echo "🔄 Changing to project directory..."
             cd /home/ubuntu/OneLLM/OneLLM
 
+            echo "🔧 Setting SSH Git remote (if needed)..."
+            git remote set-url origin git@github.com:no1umang/your-repo.git
+
             echo "📦 Pulling latest changes from Git..."
             git pull origin production
 
@@ -31,11 +34,9 @@ jobs:
             cargo build --release -p oneAI-backend
 
             echo "🚀 Restarting app..."
-
             pkill oneAI-backend || true
 
             OPENAI=${{ secrets.OPENAI }} \
             CLAUDE=${{ secrets.CLAUDE }} \
             DEEPSEEK=${{ secrets.DEEPSEEK }} \
-
             nohup ./target/release/oneAI-backend > output.log 2>&1 &
