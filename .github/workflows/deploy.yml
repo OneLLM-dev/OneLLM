@@ -1,0 +1,41 @@
+name: Deploy Rust App to EC2
+
+on:
+  push:
+    branches:
+      - production  # or your deployment branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: OPENAI,CLAUDE,DEEPSEEK
+          script: |
+            set -e
+
+            echo "🔄 Changing to project directory..."
+            cd /home/ubuntu/OneLLM
+
+            echo "📦 Pulling latest changes from Git..."
+            git pull origin production
+
+            echo "🔨 Building Rust app..."
+            source $HOME/.cargo/env
+            cargo build --release -p oneAI-backend
+
+            echo "🚀 Restarting app..."
+
+            pkill oneAI-backend || true
+
+            OPENAI=${{ secrets.OPENAI }} \
+            CLAUDE=${{ secrets.CLAUDE }} \
+            DEEPSEEK=${{ secrets.DEEPSEEK }} \
+
+            nohup ./target/release/oneAI-backend > output.log 2>&1 &
