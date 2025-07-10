@@ -24,7 +24,7 @@ jobs:
             cd /home/ubuntu/OneLLM/OneLLM
 
             echo "🔧 Setting SSH Git remote (if needed)..."
-            git remote set-url origin git@github.com:no1umang/your-repo.git
+            git remote set-url origin git@github.com:OneLLM-dev/OneLLM.git
 
             echo "📦 Pulling latest changes from Git..."
             git pull origin production
