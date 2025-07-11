@@ -36,3 +36,12 @@ jobs:
           source: ./target/x86_64-unknown-linux-gnu/release/oneAI-backend
           target: /home/ubuntu/app
 
+      - name: Restart Backend via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo systemctl restart oneai-backend.service
+
