@@ -34,7 +34,7 @@ curl -X POST http://127.0.0.1:3000/api \
 ```zsh
 curl -X POST http://127.0.0.1:3000/api \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer oa-28366171116533564198" \
+  -H "Authorization: Bearer oa-32347951672996891279" \
   -d '{
     "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
     "model": "1.5-Flash",

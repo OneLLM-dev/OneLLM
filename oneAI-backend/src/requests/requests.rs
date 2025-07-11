@@ -65,8 +65,8 @@ impl APIInput {
 
         match self.model.provider() {
             AIProvider::Gemini => {
-                //                output = resp.send().await?.text().await;
-                return Err("Gemini isn't available at this moment (OneLLM's response)".into());
+                output = resp.send().await?.text().await;
+                //                return Err("Gemini isn't available at this moment (OneLLM's response)".into());
             }
             AIProvider::Anthropic => {
                 output = resp.header("x-api-key", apikey).send().await?.text().await;
@@ -89,16 +89,17 @@ impl APIInput {
                 claude.into()
             }
             AIProvider::Gemini => {
-                return Err("Gemini isn't available at this moment (OneLLM's response)".into());
+                //                return Err("Gemini isn't available at this moment (OneLLM's response)".into());
 
-                //                let gemini: GeminiResponse = from_str(&output?)?;
-                //                let total = gemini
-                //                    .usage_metadata
-                //                    .as_ref()
-                //                    .map(|u| u.total_token_count)
-                //                    .unwrap_or(0);
-                //
-                //                gemini.into()
+                let gemini: GeminiResponse = from_str(&output?)?;
+
+                total = gemini
+                    .usage_metadata
+                    .as_ref()
+                    .map(|u| u.total_token_count)
+                    .unwrap_or(0);
+
+                gemini.into()
             }
             AIProvider::DeepSeek => {
                 let deepseek: DeepSeekResponse = from_str(&output?)?;
