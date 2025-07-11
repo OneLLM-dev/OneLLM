@@ -72,12 +72,18 @@ impl From<GeminiResponse> for LlmUnifiedResponse {
             (None, String::new(), None)
         };
 
+        let usage = res.usage_metadata.map(|u| crate::requests::responseparser::common::LlmUsage {
+            input_tokens: Some(u.prompt_token_count),
+            output_tokens: Some(u.candidates_token_count),
+            total_tokens: Some(u.total_token_count),
+        });
+
         LlmUnifiedResponse {
             provider: "Gemini".into(),
             model: "gemini".into(), // Gemini API doesn't return model in response, can inject manually
             role,
             content,
-            usage: None, // Gemini's response usually doesn't include token usage
+            usage, // Gemini's response usually doesn't include token usage
             finish_reason,
         }
     }
