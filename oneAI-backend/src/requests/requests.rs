@@ -11,7 +11,7 @@ use reqwest::Error;
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 
-use crate::{requests::parseapi::APIInput, utils::User};
+use crate::{requests::{parseapi::APIInput, responseparser::mistral::MistralResponse}, utils::User};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum AIProvider {
@@ -19,6 +19,7 @@ pub enum AIProvider {
     Anthropic,
     Gemini,
     DeepSeek,
+    Mistral,
 }
 
 impl APIInput {
@@ -37,6 +38,7 @@ impl APIInput {
                 key
             }
             AIProvider::DeepSeek => std::env::var("DEEPSEEK").expect("Error getting DS apikey"),
+            AIProvider::Mistral => std::env::var("MISTRAL").expect("Error getting Mistral APIKEY"),
         };
         let client = reqwest::Client::new();
 
@@ -88,9 +90,12 @@ impl APIInput {
                 total = claude.usage.input_tokens + claude.usage.output_tokens;
                 claude.into()
             }
+            AIProvider::Mistral => {
+                let mistral: MistralResponse = from_str(&output?)?;
+                total = mistral.usage.as_ref().unwrap().total_tokens;
+                mistral.into()
+            }
             AIProvider::Gemini => {
-                //                return Err("Gemini isn't available at this moment (OneLLM's response)".into());
-
                 let gemini: GeminiResponse = from_str(&output?)?;
 
                 total = gemini
