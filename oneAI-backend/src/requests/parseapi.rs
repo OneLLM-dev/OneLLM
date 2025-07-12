@@ -197,6 +197,22 @@ impl APIInput {
                     "tools": self.tools,
                 })
             }
+            AIProvider::Mistral => {
+                json!({
+                    "model": self.model.name(),
+                    "messages": self.messages,
+                    "temperature": self.temperature,
+                    "max_tokens": maxtoken,
+                    "top_p": self.top_p,
+                    "stop": self.stop_sequences,
+                    "stream": self.stream,
+                    "tools": self.tools,
+                    "tool_choice": self.tool_choice,
+                    "response_format": self.response_format,
+                    "seed": self.seed,
+                    "user": self.user,
+                })
+            }
         }
     }
 }
