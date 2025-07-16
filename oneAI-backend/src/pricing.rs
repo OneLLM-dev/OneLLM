@@ -108,18 +108,18 @@ impl Model {
     pub fn name(&self) -> &str {
         match self {
             // ==== OpenAI ====
-            Model::Gpt4_1 => "GPT-4.1",
-            Model::Gpt4_1Mini => "GPT-4.1-Mini",
-            Model::Gpt4_1Nano => "GPT-4.1-Nano",
-            Model::GptO3 => "GPT-o3",
-            Model::GptO4Mini => "GPT-o4-mini",
-            Model::GptO3Pro => "GPT-o3-pro",
-            Model::Gpt4o => "GPT-4o",
-            Model::Gpt4oMini => "GPT-4o-mini",
-            Model::GptO1 => "GPT-o1",
-            Model::GptO3DeepResearch => "GPT-o3-DeepResearch",
-            Model::GptO3Mini => "GPT-o3-Mini",
-            Model::GptO1Mini => "GPT-o1-Mini",
+            Model::Gpt4_1 => "gpt-4.1",
+            Model::Gpt4_1Mini => "gpt-4.1-mini",
+            Model::Gpt4_1Nano => "gpt-4.1-nano",
+            Model::GptO3 => "gpt-o3",
+            Model::GptO4Mini => "gpt-o4-mini",
+            Model::GptO3Pro => "gpt-o3-pro",
+            Model::Gpt4o => "gpt-4o",
+            Model::Gpt4oMini => "gpt-4o-mini",
+            Model::GptO1 => "gpt-o1",
+            Model::GptO3DeepResearch => "gpt-o3-DeepResearch",
+            Model::GptO3Mini => "gpt-o3-mini",
+            Model::GptO1Mini => "gpt-o1-mini",
 
             // ==== Anthropic ====
             Model::ClaudeOpus4 => "Opus-4",
