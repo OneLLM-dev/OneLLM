@@ -87,15 +87,11 @@ impl From<OpenAIResponse> for LlmUnifiedResponse {
     fn from(res: OpenAIResponse) -> Self {
         let first = res.choices.get(0);
 
-        let content = first
-            .map(|c| c.message.content.clone())
-            .unwrap_or_default();
+        let content = first.map(|c| c.message.content.clone()).unwrap_or_default();
 
-        let role = first
-            .map(|c| c.message.role.clone());
+        let role = first.map(|c| c.message.role.clone());
 
-        let finish_reason = first
-            .and_then(|c| c.finish_reason.clone());
+        let finish_reason = first.and_then(|c| c.finish_reason.clone());
 
         LlmUnifiedResponse {
             provider: "OpenAI".into(),
