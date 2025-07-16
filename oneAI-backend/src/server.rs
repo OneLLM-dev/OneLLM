@@ -205,11 +205,11 @@ pub async fn handle_api(headers: HeaderMap, Json(payload): Json<APIInput>) -> Js
 
     let output = match payload.get(apikey).await {
         Ok(result) => result,
-        Err(_) => {
+        Err(e) => {
             return Json(Output {
                 code: 500,
                 output: json!({
-                "output": "Error during payload processing"
+                "output": e.to_string()
                 }),
             });
         }
