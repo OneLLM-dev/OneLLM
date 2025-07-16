@@ -84,6 +84,7 @@ impl APIInput {
         let total: u32;
         let unified_response: LlmUnifiedResponse = match self.model.provider() {
             AIProvider::OpenAI => {
+                println!("output: {:#?}", output);
                 let openai: OpenAIResponse = from_str(&output?)?;
                 total = openai.usage.total_tokens;
                 openai.into()
