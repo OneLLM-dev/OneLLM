@@ -11,7 +11,10 @@ use reqwest::Error;
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 
-use crate::{requests::{parseapi::APIInput, responseparser::mistral::MistralResponse}, utils::User};
+use crate::{
+    requests::{parseapi::APIInput, responseparser::mistral::MistralResponse},
+    utils::User,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum AIProvider {
