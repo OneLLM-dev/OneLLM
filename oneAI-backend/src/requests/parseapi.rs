@@ -109,7 +109,7 @@ impl APIInput {
                     "model": self.model.name(),
                     "messages": self.messages,
                     "temperature": self.temperature,
-                    "max_tokens": maxtoken,
+                    "max_completion_tokens": maxtoken,
                     "top_p": self.top_p,
                     "stop": self.stop_sequences,
                     "stream": self.stream,
