@@ -1,3 +1,4 @@
 target
 .env
 deploy_key
+dump.rdb
