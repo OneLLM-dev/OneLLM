@@ -76,8 +76,6 @@ pub enum Model {
     Codestral,
     #[serde(rename = "Devstral-Medium")]
     DevstralMedium,
-    #[serde(rename = "Mistral-Saba")]
-    MistralSaba,
     #[serde(rename = "Mistral-Large")]
     MistralLarge,
     #[serde(rename = "Pixtral-Large")]
@@ -96,12 +94,6 @@ pub enum Model {
     Pixtral12B,
     #[serde(rename = "Mistral-NeMo")]
     MistralNemo,
-    #[serde(rename = "Mistral-7B")]
-    Mistral7B,
-    #[serde(rename = "Mixtral-8x7B")]
-    Mixtral8x7B,
-    #[serde(rename = "Mixtral-8x22B")]
-    Mixtral8x22B,
 }
 
 impl Model {
@@ -143,23 +135,19 @@ impl Model {
             Model::Gemini15Pro => "1.5-Pro",
 
             // ==== Mistral ====
-            Model::MistralMedium3 => "Mistral-Medium-3",
-            Model::MagistralMedium => "Magistral-Medium",
-            Model::Codestral => "Codestral",
-            Model::DevstralMedium => "Devstral-Medium",
-            Model::MistralSaba => "Mistral-Saba",
-            Model::MistralLarge => "Mistral-Large",
-            Model::PixtralLarge => "Pixtral-Large",
-            Model::Ministral8B_24_10 => "Ministral-8B-24.10",
-            Model::Ministral3B_24_10 => "Ministral-3B-24.10",
-            Model::MistralSmall3_2 => "Mistral-Small-3.2",
-            Model::MagistralSmall => "Magistral-Small",
-            Model::DevstralSmall => "Devstral-Small",
-            Model::Pixtral12B => "Pixtral-12B",
-            Model::MistralNemo => "Mistral-NeMo",
-            Model::Mistral7B => "Mistral-7B",
-            Model::Mixtral8x7B => "Mixtral-8x7B",
-            Model::Mixtral8x22B => "Mixtral-8x22B",
+            Model::MistralMedium3 => "Mistral-Medium-2505",
+            Model::MagistralMedium => "Magistral-Medium-2506",
+            Model::Codestral => "Codestral-2501",
+            Model::DevstralMedium => "Devstral-Medium-2507",
+            Model::MistralLarge => "Mistral-Large-2411",
+            Model::PixtralLarge => "Pixtral-Large-2411",
+            Model::Ministral8B_24_10 => "Ministral-8B-2410",
+            Model::Ministral3B_24_10 => "Ministral-3B-2410",
+            Model::MistralSmall3_2 => "Mistral-Small-2506",
+            Model::MagistralSmall => "Magistral-Small-2506",
+            Model::DevstralSmall => "Devstral-Small-2507",
+            Model::Pixtral12B => "Pixtral-12B-2409",
+            Model::MistralNemo => "open-Mistral-NeMo",
         }
     }
     pub fn price(&self) -> u32 {
@@ -204,7 +192,6 @@ impl Model {
             Model::MagistralMedium => 7280,
             Model::Codestral => 1248,
             Model::DevstralMedium => 2496,
-            Model::MistralSaba => 832,
             Model::MistralLarge => 8320,
             Model::PixtralLarge => 8320,
             Model::Ministral8B_24_10 => 208,
@@ -214,9 +201,6 @@ impl Model {
             Model::DevstralSmall => 416,
             Model::Pixtral12B => 312,
             Model::MistralNemo => 312,
-            Model::Mistral7B => 520,
-            Model::Mixtral8x7B => 1456,
-            Model::Mixtral8x22B => 8320,
         }
     }
     pub fn provider(&self) -> AIProvider {
@@ -260,7 +244,6 @@ impl Model {
             | Model::MagistralMedium
             | Model::Codestral
             | Model::DevstralMedium
-            | Model::MistralSaba
             | Model::MistralLarge
             | Model::PixtralLarge
             | Model::Ministral8B_24_10
@@ -269,9 +252,6 @@ impl Model {
             | Model::DevstralSmall
             | Model::Pixtral12B
             | Model::MistralNemo
-            | Model::Mistral7B
-            | Model::Mixtral8x7B
-            | Model::Mixtral8x22B
             | Model::MistralSmall3_2 => AIProvider::Mistral,
         }
     }
