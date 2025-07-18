@@ -74,7 +74,13 @@ impl APIInput {
                 //                return Err("Gemini isn't available at this moment (OneLLM's response)".into());
             }
             AIProvider::Anthropic => {
-                output = resp.header("x-api-key", apikey).send().await?.text().await;
+                output = resp
+                    .header("x-api-key", apikey)
+                    .header("anthropic-version", "2023-06-01")
+                    .send()
+                    .await?
+                    .text()
+                    .await;
             }
             _ => {
                 output = resp.bearer_auth(apikey).send().await?.text().await;
@@ -84,7 +90,6 @@ impl APIInput {
         let total: u32;
         let unified_response: LlmUnifiedResponse = match self.model.provider() {
             AIProvider::OpenAI => {
-                println!("output: {:#?}", output);
                 let openai: OpenAIResponse = from_str(&output?)?;
                 total = openai.usage.total_tokens;
                 openai.into()

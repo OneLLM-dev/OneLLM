@@ -124,28 +124,36 @@ impl APIInput {
                 })
             }
             AIProvider::Anthropic => {
-                let messages: Vec<serde_json::Value> = self
-                    .messages
-                    .into_iter()
-                    .map(|msg| {
-                        json!({
-                            "role": msg.role,
-                            "content": msg.content,
-                        })
-                    })
-                    .collect();
-
-                json!({
+                let mut req = json!({
                     "model": self.model.name(),
-                    "messages": messages,
-                    "temperature": self.temperature,
+                    "messages": self.messages.into_iter().map(|msg| json!({
+                        "role": msg.role,
+                        "content": msg.content
+                    })).collect::<Vec<_>>(),
                     "max_tokens": maxtoken,
+                    "temperature": self.temperature,
                     "top_p": self.top_p,
-                    "stop_sequences": self.stop_sequences,
-                    "stream": self.stream,
-                    "system": self.system,
-                    "top_k": self.top_k,
-                })
+                    "stream": self.stream.unwrap_or(false),
+                });
+
+                if let Some(system) = self.system {
+                    req.as_object_mut()
+                        .unwrap()
+                        .insert("system".into(), json!(system));
+                }
+
+                if let Some(stop_sequences) = self.stop_sequences {
+                    req.as_object_mut()
+                        .unwrap()
+                        .insert("stop_sequences".into(), json!(stop_sequences));
+                }
+
+                if let Some(top_k) = self.top_k {
+                    req.as_object_mut()
+                        .unwrap()
+                        .insert("top_k".into(), json!(top_k));
+                }
+                req
             }
             AIProvider::Gemini => {
                 let contents: Vec<serde_json::Value> = if let Some(contents) = self.contents.clone()
