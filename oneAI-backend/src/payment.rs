@@ -45,29 +45,26 @@ where
 }
 
 pub async fn handle_webhook(StripeEvent(event): StripeEvent) {
-    match event.type_ {
-        EventType::CheckoutSessionCompleted => {
-            if let EventObject::CheckoutSession(session) = event.data.object {
-                let details = match &session.customer_details {
-                    Some(d) => d,
-                    None => return,
-                };
+    if event.type_ == EventType::CheckoutSessionCompleted {
+        if let EventObject::CheckoutSession(session) = event.data.object {
+            let details = match &session.customer_details {
+                Some(d) => d,
+                None => return,
+            };
 
-                let email = match &details.email {
-                    Some(e) => e,
-                    None => return,
-                };
+            let email = match &details.email {
+                Some(e) => e,
+                None => return,
+            };
 
-                let amount_total = match session.amount_total {
-                    Some(a) => a * 10000,
-                    None => return,
-                };
+            let amount_total = match session.amount_total {
+                Some(a) => a * 10000,
+                None => return,
+            };
 
-                update_bal(email.to_owned(), amount_total as i32)
-                    .await
-                    .expect("Error while updating balance from stripe");
-            }
+            update_bal(email.to_owned(), amount_total as i32)
+                .await
+                .expect("Error while updating balance from stripe");
         }
-        _ => {}
     }
 }

@@ -33,7 +33,7 @@ pub struct MistralUsage {
 
 impl From<MistralResponse> for LlmUnifiedResponse {
     fn from(res: MistralResponse) -> Self {
-        let choice = res.choices.get(0);
+        let choice = res.choices.first();
         let (role, content, finish_reason) = if let Some(c) = choice {
             (
                 Some(c.message.role.clone()),

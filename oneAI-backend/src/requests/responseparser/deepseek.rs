@@ -33,7 +33,7 @@ pub struct DeepSeekUsage {
 
 impl From<DeepSeekResponse> for LlmUnifiedResponse {
     fn from(res: DeepSeekResponse) -> Self {
-        let choice = res.choices.get(0);
+        let choice = res.choices.first();
         let (role, content, finish_reason) = if let Some(c) = choice {
             (
                 Some(c.message.role.clone()),

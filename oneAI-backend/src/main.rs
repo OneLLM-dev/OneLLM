@@ -11,7 +11,7 @@ use server::server;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _db = database::init_db().await?;
+    database::init_db().await?;
     let _server = server().await;
 
     Ok(())

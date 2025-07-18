@@ -116,9 +116,9 @@ impl APIInput {
                 deepseek.into()
             }
         };
-        match update_bal(user.email, -1 * (price * total) as i32).await {
-            Some(_) => return Ok(unified_response),
-            None => return Err("An Unexpected error occurred".into()),
+        match update_bal(user.email, -(((price * total)/100) as i32)).await {
+            Some(_) => Ok(unified_response),
+            None => Err("An Unexpected error occurred".into()),
         }
     }
 }

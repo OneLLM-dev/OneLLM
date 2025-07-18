@@ -60,7 +60,7 @@ pub struct GeminiSafetyRating {
 }
 impl From<GeminiResponse> for LlmUnifiedResponse {
     fn from(res: GeminiResponse) -> Self {
-        let candidate = res.candidates.get(0);
+        let candidate = res.candidates.first();
         let (role, content, finish_reason) = if let Some(c) = candidate {
             let text = c
                 .content

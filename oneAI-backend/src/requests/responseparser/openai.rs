@@ -85,7 +85,7 @@ pub struct OpenAIMetadata {} // Empty object
 
 impl From<OpenAIResponse> for LlmUnifiedResponse {
     fn from(res: OpenAIResponse) -> Self {
-        let first = res.choices.get(0);
+        let first = res.choices.first();
 
         let content = first.map(|c| c.message.content.clone()).unwrap_or_default();
 
