@@ -148,30 +148,33 @@ impl APIInput {
                 })
             }
             AIProvider::Gemini => {
-                let contents: Vec<serde_json::Value> = self
-                    .messages
-                    .into_iter()
-                    .map(|msg| {
-                        json!({
-                            "role": msg.role,
-                            "parts": [
-                                { "text": msg.content }
-                            ]
+                let contents: Vec<serde_json::Value> = if let Some(contents) = self.contents.clone()
+                {
+                    contents.into_iter().map(|c| json!(c)).collect()
+                } else {
+                    self.messages
+                        .into_iter()
+                        .map(|msg| {
+                            json!({
+                                "role": msg.role,
+                                "parts": [
+                                    { "text": msg.content }
+                                ]
+                            })
                         })
-                    })
-                    .collect();
+                        .collect()
+                };
 
                 json!({
-                    "model": self.model.name(),
                     "contents": contents,
-                    "safety_settings": self.safety_settings,
-                    "generation_config": {
+                    "safetySettings": self.safety_settings,
+                    "generationConfig": {
                         "temperature": self.temperature,
-                        "top_p": self.top_p,
-                        "top_k": self.generation_config.as_ref().map(|cfg| cfg.top_k),
-                        "candidate_count": self.generation_config.as_ref().map(|cfg| cfg.candidate_count),
-                        "max_output_tokens": maxtoken,
-                        "stop_sequences": self.stop_sequences,
+                        "topP": self.top_p,
+                        "topK": self.generation_config.as_ref().map(|cfg| cfg.top_k),
+                        "candidateCount": self.generation_config.as_ref().map(|cfg| cfg.candidate_count),
+                        "maxOutputTokens": maxtoken,
+                        "stopSequences": self.stop_sequences,
                     },
                     "tools": self.tools,
                 })
