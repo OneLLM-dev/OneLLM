@@ -1,6 +1,5 @@
 use redis::AsyncCommands;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tokio;
 use tower_http::cors::{Any, CorsLayer};
 
 use axum::{Json, Router, http::header::HeaderMap, response::IntoResponse, routing::post};
@@ -59,9 +58,9 @@ pub async fn verify_email(Json(payload): Json<VerifyInput>) -> Json<FailOrSucc> 
             return Json(FailOrSucc::Successful("Successful".to_string()));
         }
         Err(e) => {
-            return Json(FailOrSucc::Failure(e.to_string()));
+            Json(FailOrSucc::Failure(e.to_string()))
         }
-    };
+    }
 }
 
 pub async fn verify_code(Json(payload): Json<VerifyInput>) -> Json<FailOrSucc> {
@@ -88,9 +87,9 @@ pub async fn verify_code(Json(payload): Json<VerifyInput>) -> Json<FailOrSucc> {
 
     if did_verify {
         match User::verify_user(&payload.email).await {
-            Ok(()) => return Json(FailOrSucc::Successful("Successful".to_string())),
+            Ok(()) => Json(FailOrSucc::Successful("Successful".to_string())),
 
-            Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+            Err(e) => Json(FailOrSucc::Failure(e.to_string())),
         }
     } else {
         Json(FailOrSucc::Failure("Verification unsuccessful".to_string()))
@@ -248,12 +247,12 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
 
             match user {
                 Some(_) => {
-                    return Json(FailOrSucc::Successful(String::from("Successful operation")));
+                    Json(FailOrSucc::Successful(String::from("Successful operation")))
                 }
                 None => {
-                    return Json(FailOrSucc::Failure(String::from(
+                    Json(FailOrSucc::Failure(String::from(
                         "Error while trying to create your account",
-                    )));
+                    )))
                 }
             }
         }
@@ -290,12 +289,12 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
                 token,
             };
 
-            return Json(FailOrSucc::User(hidden_user));
+            Json(FailOrSucc::User(hidden_user))
         }
         _ => {
-            return Json(FailOrSucc::Failure(
+            Json(FailOrSucc::Failure(
                 "Tried to do Handle API at POST section".to_owned(),
-            ));
+            ))
         }
     }
 }
@@ -306,10 +305,10 @@ async fn login_with_token(Json(query): Json<TokenInput>) -> Json<FailOrSucc> {
         Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
     };
     hidden_user.balance /= 1_000_000;
-    return Json(FailOrSucc::User(WebOutput {
+    Json(FailOrSucc::User(WebOutput {
         user: hidden_user,
         token: query.token,
-    }));
+    }))
 }
 
 pub async fn handle_token_auth(Json(payload): Json<TokenInput>) -> impl IntoResponse {
@@ -338,8 +337,8 @@ pub async fn handle_token_auth(Json(payload): Json<TokenInput>) -> impl IntoResp
             .generate_apikey(&payload.name.unwrap_or("".to_owned()))
             .await
         {
-            Ok(api) => return Json(FailOrSucc::SuccessData(api)),
-            Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+            Ok(api) => Json(FailOrSucc::SuccessData(api)),
+            Err(e) => Json(FailOrSucc::Failure(e.to_string())),
         },
 
         WebQuery::DelAPI => {
@@ -350,15 +349,15 @@ pub async fn handle_token_auth(Json(payload): Json<TokenInput>) -> impl IntoResp
             )
             .await
             {
-                Ok(()) => return Json(FailOrSucc::Successful("Successful operation".to_string())),
-                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+                Ok(()) => Json(FailOrSucc::Successful("Successful operation".to_string())),
+                Err(e) => Json(FailOrSucc::Failure(e.to_string())),
             }
         }
 
         WebQuery::APICount => {
             match User::get_keynames(&payload.email.unwrap_or("".to_string())).await {
-                Ok(keynamevec) => return Json(FailOrSucc::SuccessVecData(keynamevec)),
-                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
+                Ok(keynamevec) => Json(FailOrSucc::SuccessVecData(keynamevec)),
+                Err(e) => Json(FailOrSucc::Failure(e.to_string())),
             }
         }
 
@@ -368,6 +367,6 @@ pub async fn handle_token_auth(Json(payload): Json<TokenInput>) -> impl IntoResp
         //                Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
         //            }
         //        }
-        _ => return Json(FailOrSucc::Failure(String::from("Incorrect endpoint"))),
+        _ => Json(FailOrSucc::Failure(String::from("Incorrect endpoint"))),
     }
 }

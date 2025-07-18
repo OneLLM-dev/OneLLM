@@ -184,7 +184,7 @@ impl User {
              FROM api_keys \
              WHERE user_id = (SELECT id FROM users WHERE email = $1)",
         )
-        .bind(&email)
+        .bind(email)
         .fetch_one(&pool)
         .await?;
         let count: i64 = row.try_get("count")?;
