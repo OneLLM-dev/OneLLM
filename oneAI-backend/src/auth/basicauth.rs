@@ -10,9 +10,7 @@ pub async fn login(email: String, password: String) -> Option<User> {
     };
 
     match verify_password(password, user.password.as_str()) {
-        Ok(_) => {
-            Some(user)
-        }
+        Ok(_) => Some(user),
         Err(_) => None,
     }
 }
@@ -45,12 +43,8 @@ pub async fn update_bal(email: String, change: i32) -> Option<User> {
         )
         .await
     {
-        Ok(_) => {
-            Some(user)
-        }
-        Err(_) => {
-            None
-        }
+        Ok(_) => Some(user),
+        Err(_) => None,
     }
 }
 

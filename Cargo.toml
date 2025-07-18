@@ -1,4 +1,4 @@
 [workspace]
 resolver = "2"
-members = [ "one-bot","oneAI-backend", "onellm"]
+members = ["oneAI-backend", "onellm", "splitllm"]
 default-run = "oneAI-backend"

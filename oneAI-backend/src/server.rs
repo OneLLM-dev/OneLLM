@@ -57,9 +57,7 @@ pub async fn verify_email(Json(payload): Json<VerifyInput>) -> Json<FailOrSucc> 
         Ok(()) => {
             return Json(FailOrSucc::Successful("Successful".to_string()));
         }
-        Err(e) => {
-            Json(FailOrSucc::Failure(e.to_string()))
-        }
+        Err(e) => Json(FailOrSucc::Failure(e.to_string())),
     }
 }
 
@@ -246,14 +244,10 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
                 .unwrap();
 
             match user {
-                Some(_) => {
-                    Json(FailOrSucc::Successful(String::from("Successful operation")))
-                }
-                None => {
-                    Json(FailOrSucc::Failure(String::from(
-                        "Error while trying to create your account",
-                    )))
-                }
+                Some(_) => Json(FailOrSucc::Successful(String::from("Successful operation"))),
+                None => Json(FailOrSucc::Failure(String::from(
+                    "Error while trying to create your account",
+                ))),
             }
         }
 
@@ -291,11 +285,9 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
 
             Json(FailOrSucc::User(hidden_user))
         }
-        _ => {
-            Json(FailOrSucc::Failure(
-                "Tried to do Handle API at POST section".to_owned(),
-            ))
-        }
+        _ => Json(FailOrSucc::Failure(
+            "Tried to do Handle API at POST section".to_owned(),
+        )),
     }
 }
 
