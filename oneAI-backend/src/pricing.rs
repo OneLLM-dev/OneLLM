@@ -114,12 +114,12 @@ impl Model {
             Model::GptO1Mini => "o1-mini",
 
             // ==== Anthropic ====
-            Model::ClaudeOpus4 => "Opus-4",
-            Model::ClaudeSonnet4 => "Sonnet-4",
-            Model::ClaudeHaiku3_5 => "Haiku-3.5",
-            Model::ClaudeOpus3 => "Opus-3",
-            Model::ClaudeSonnet3_7 => "Sonnet-3.7",
-            Model::ClaudeHaiku3 => "Haiku-3",
+            Model::ClaudeOpus4 => "claude-opus-4-20250514",
+            Model::ClaudeSonnet4 => "claude-sonnet-4-20250514",
+            Model::ClaudeHaiku3_5 => "claude-3-5-haiku-latest",
+            Model::ClaudeOpus3 => "claude-3-opus-20240229",
+            Model::ClaudeSonnet3_7 => "claude-3-7-sonnet-latest",
+            Model::ClaudeHaiku3 => "claude-3-haiku-20240307",
 
             // ==== DeepSeek ====
             Model::DeepSeekR1 => "DeepSeek-Reasoner",
