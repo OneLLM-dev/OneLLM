@@ -102,6 +102,66 @@ pub enum Model {
     Mixtral8x22B,
 }
 
+impl Model {
+    pub fn price(&self) -> u32 {
+        match self {
+            // ==== OpenAI ====
+            Model::Gpt4_1 => 1040,
+            Model::Gpt4_1Mini => 208,
+            Model::Gpt4_1Nano => 52,
+            Model::GptO3 => 1040,
+            Model::GptO4Mini => 572,
+            Model::GptO3Pro => 10400,
+            Model::Gpt4o => 1300,
+            Model::Gpt4oMini => 78,
+            Model::GptO1 => 7800,
+            Model::GptO3DeepResearch => 5200,
+            Model::GptO3Mini => 572,
+            Model::GptO1Mini => 572,
+
+            // ==== Anthropic ====
+            Model::ClaudeOpus4 => 9360,
+            Model::ClaudeSonnet4 => 1872,
+            Model::ClaudeHaiku3_5 => 499,
+            Model::ClaudeOpus3 => 9360,
+            Model::ClaudeSonnet3_7 => 1872,
+            Model::ClaudeHaiku3 => 182,
+
+            // ==== DeepSeek ====
+            Model::DeepSeekR1 => 142,
+            Model::DeepSeekV3 => 242,
+
+            // ==== Gemini (Google) ====
+            Model::Gemini25FlashPreview => 380,
+            Model::Gemini25ProPreview => 1820,
+            Model::Gemini20Flash => 52,
+            Model::Gemini20FlashLite => 39,
+            Model::Gemini15Flash => 78,
+            Model::Gemini15Flash8B => 39,
+            Model::Gemini15Pro => 1300,
+
+            // ==== Mistral ====
+            Model::MistralMedium3 => 2496,
+            Model::MagistralMedium => 7280,
+            Model::Codestral => 1248,
+            Model::DevstralMedium => 2496,
+            Model::MistralSaba => 832,
+            Model::MistralLarge => 8320,
+            Model::PixtralLarge => 8320,
+            Model::Ministral8B_24_10 => 208,
+            Model::Ministral3B_24_10 => 83,
+            Model::MistralSmall3_2 => 416,
+            Model::MagistralSmall => 2080,
+            Model::DevstralSmall => 416,
+            Model::Pixtral12B => 312,
+            Model::MistralNemo => 312,
+            Model::Mistral7B => 520,
+            Model::Mixtral8x7B => 1456,
+            Model::Mixtral8x22B => 8320,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Message {
     pub role: String,
