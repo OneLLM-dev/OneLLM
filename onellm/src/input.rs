@@ -74,8 +74,6 @@ pub enum Model {
     Codestral,
     #[serde(rename = "Devstral-Medium")]
     DevstralMedium,
-    #[serde(rename = "Mistral-Saba")]
-    MistralSaba,
     #[serde(rename = "Mistral-Large")]
     MistralLarge,
     #[serde(rename = "Pixtral-Large")]
@@ -94,12 +92,63 @@ pub enum Model {
     Pixtral12B,
     #[serde(rename = "Mistral-NeMo")]
     MistralNemo,
-    #[serde(rename = "Mistral-7B")]
-    Mistral7B,
-    #[serde(rename = "Mixtral-8x7B")]
-    Mixtral8x7B,
-    #[serde(rename = "Mixtral-8x22B")]
-    Mixtral8x22B,
+}
+
+impl ToString for Model {
+    fn to_string(&self) -> String {
+        match self {
+            // ==== OpenAI ====
+            Model::Gpt4_1 => "GPT-4.1",
+            Model::Gpt4_1Mini => "GPT-4.1-Mini",
+            Model::Gpt4_1Nano => "GPT-4.1-Nano",
+            Model::GptO3 => "GPT-o3",
+            Model::GptO4Mini => "GPT-o4-mini",
+            Model::GptO3Pro => "GPT-o3-pro",
+            Model::Gpt4o => "GPT-4o",
+            Model::Gpt4oMini => "GPT-4o-mini",
+            Model::GptO1 => "GPT-o1",
+            Model::GptO3DeepResearch => "GPT-o3-DeepResearch",
+            Model::GptO3Mini => "GPT-o3-Mini",
+            Model::GptO1Mini => "GPT-o1-Mini",
+
+            // ==== Anthropic ====
+            Model::ClaudeOpus4 => "Opus-4",
+            Model::ClaudeSonnet4 => "Sonnet-4",
+            Model::ClaudeHaiku3_5 => "Haiku-3.5",
+            Model::ClaudeOpus3 => "Opus-3",
+            Model::ClaudeSonnet3_7 => "Sonnet-3.7",
+            Model::ClaudeHaiku3 => "Haiku-3",
+
+            // ==== DeepSeek ====
+            Model::DeepSeekR1 => "DeepSeek-Reasoner",
+            Model::DeepSeekV3 => "DeepSeek-Chat",
+
+            // ==== Gemini ====
+            Model::Gemini25FlashPreview => "gemini-2.5-Flash-preview",
+            Model::Gemini25ProPreview => "gemini-2.5-Pro-preview",
+            Model::Gemini20Flash => "gemini-2.0-Flash",
+            Model::Gemini20FlashLite => "gemini-2.0-Flash-lite",
+            Model::Gemini15Flash => "gemini-1.5-Flash",
+            Model::Gemini15Flash8B => "gemini-1.5-Flash-8B",
+            Model::Gemini15Pro => "gemini-1.5-Pro",
+
+            // ==== Mistral ====
+            Model::MistralMedium3 => "Mistral-Medium-3",
+            Model::MagistralMedium => "Magistral-Medium",
+            Model::Codestral => "Codestral",
+            Model::DevstralMedium => "Devstral-Medium",
+            Model::MistralLarge => "Mistral-Large",
+            Model::PixtralLarge => "Pixtral-Large",
+            Model::Ministral8B_24_10 => "Ministral-8B-24.10",
+            Model::Ministral3B_24_10 => "Ministral-3B-24.10",
+            Model::MistralSmall3_2 => "Mistral-Small-3.2",
+            Model::MagistralSmall => "Magistral-Small",
+            Model::DevstralSmall => "Devstral-Small",
+            Model::Pixtral12B => "Pixtral-12B",
+            Model::MistralNemo => "Mistral-NeMo",
+        }
+        .to_string()
+    }
 }
 
 impl Model {
@@ -145,7 +194,6 @@ impl Model {
             Model::MagistralMedium => 7280,
             Model::Codestral => 1248,
             Model::DevstralMedium => 2496,
-            Model::MistralSaba => 832,
             Model::MistralLarge => 8320,
             Model::PixtralLarge => 8320,
             Model::Ministral8B_24_10 => 208,
@@ -155,9 +203,6 @@ impl Model {
             Model::DevstralSmall => 416,
             Model::Pixtral12B => 312,
             Model::MistralNemo => 312,
-            Model::Mistral7B => 520,
-            Model::Mixtral8x7B => 1456,
-            Model::Mixtral8x22B => 8320,
         }
     }
 }
