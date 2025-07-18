@@ -201,20 +201,29 @@ impl APIInput {
                 })
             }
             AIProvider::Mistral => {
-                json!({
-                    "model": self.model.name(),
+                let mut req = json!({
+                    "model": self.model.name().to_lowercase(),
                     "messages": self.messages,
                     "temperature": self.temperature,
-                    "max_tokens": maxtoken,
+                    "max_tokens": self.max_tokens,
                     "top_p": self.top_p,
-                    "stop": self.stop_sequences,
-                    "stream": self.stream,
-                    "tools": self.tools,
-                    "tool_choice": self.tool_choice,
-                    "response_format": self.response_format,
-                    "seed": self.seed,
-                    "user": self.user,
-                })
+                });
+
+                if let Some(stop) = &self.stop_sequences {
+                    if !stop.is_empty() {
+                        req.as_object_mut()
+                            .unwrap()
+                            .insert("stop".to_string(), json!(stop));
+                    }
+                }
+
+                if let Some(stream) = self.stream {
+                    req.as_object_mut()
+                        .unwrap()
+                        .insert("stream".to_string(), json!(stream));
+                }
+
+                req
             }
         }
     }
