@@ -150,59 +150,164 @@ impl Model {
             Model::MistralNemo => "open-Mistral-NeMo",
         }
     }
-    pub fn price(&self) -> u32 {
+    pub fn input_price(&self) -> u32 {
         match self {
             // ==== OpenAI ====
-            Model::Gpt4_1 => 1040,
-            Model::Gpt4_1Mini => 208,
-            Model::Gpt4_1Nano => 52,
-            Model::GptO3 => 1040,
-            Model::GptO4Mini => 572,
-            Model::GptO3Pro => 10400,
-            Model::Gpt4o => 1300,
-            Model::Gpt4oMini => 78,
-            Model::GptO1 => 7800,
-            Model::GptO3DeepResearch => 5200,
-            Model::GptO3Mini => 572,
-            Model::GptO1Mini => 572,
+            Model::Gpt4_1 => 200,
+            Model::Gpt4_1Mini => 40,
+            Model::Gpt4_1Nano => 10,
+            Model::Gpt4o => 250,
+            Model::Gpt4oMini => 15,
+            Model::GptO3 => 200,
+            Model::GptO3Pro => 2000,
+            Model::GptO3DeepResearch => 1000,
+            Model::GptO4Mini => 110,
+            Model::GptO3Mini => 110,
+            Model::GptO1 => 1500,
+            Model::GptO1Mini => 110,
 
             // ==== Anthropic ====
-            Model::ClaudeOpus4 => 9360,
-            Model::ClaudeSonnet4 => 1872,
-            Model::ClaudeHaiku3_5 => 499,
-            Model::ClaudeOpus3 => 9360,
-            Model::ClaudeSonnet3_7 => 1872,
-            Model::ClaudeHaiku3 => 182,
-
-            // ==== DeepSeek ====
-            Model::DeepSeekR1 => 142,
-            Model::DeepSeekV3 => 242,
-
-            // ==== Gemini (Google) ====
-            Model::Gemini25FlashPreview => 380,
-            Model::Gemini25ProPreview => 1820,
-            Model::Gemini20Flash => 52,
-            Model::Gemini20FlashLite => 39,
-            Model::Gemini15Flash => 78,
-            Model::Gemini15Flash8B => 39,
-            Model::Gemini15Pro => 1300,
+            Model::ClaudeOpus4 => 1500,
+            Model::ClaudeSonnet4 => 300,
+            Model::ClaudeHaiku3_5 => 80,
+            Model::ClaudeOpus3 => 1500,
+            Model::ClaudeSonnet3_7 => 300,
+            Model::ClaudeHaiku3 => 25,
 
             // ==== Mistral ====
-            Model::MistralMedium3 => 2496,
-            Model::MagistralMedium => 7280,
-            Model::Codestral => 1248,
-            Model::DevstralMedium => 2496,
-            Model::MistralLarge => 8320,
-            Model::PixtralLarge => 8320,
-            Model::Ministral8B_24_10 => 208,
-            Model::Ministral3B_24_10 => 83,
-            Model::MistralSmall3_2 => 416,
-            Model::MagistralSmall => 2080,
-            Model::DevstralSmall => 416,
-            Model::Pixtral12B => 312,
-            Model::MistralNemo => 312,
+            Model::MistralMedium3 => 40,
+            Model::MagistralMedium => 200,
+            Model::MistralLarge => 200,
+            Model::DevstralMedium => 40,
+            Model::MistralSmall3_2 => 10,
+            Model::MagistralSmall => 50,
+            Model::Codestral => 30,
+            Model::DevstralSmall => 10,
+            Model::MistralNemo => 15,
+            Model::Pixtral12B => 15,
+            Model::PixtralLarge => 200,
+            Model::Ministral8B_24_10 => 10,
+            Self::Ministral3B_24_10 => 4,
+
+            // ==== DeepSeek ====
+            Model::DeepSeekR1 => 55,
+            Model::DeepSeekV3 => 27,
+
+            // ==== Gemini (Google) ====
+            Model::Gemini25ProPreview => 125,
+            Model::Gemini25FlashPreview => 30,
+            Model::Gemini20Flash => 10,
+            Model::Gemini20FlashLite => 7,
+            Model::Gemini15Flash => 7,
+            Model::Gemini15Flash8B => 3,
+            Model::Gemini15Pro => 125,
         }
     }
+    pub fn output_price(&self) -> u32 {
+        match self {
+            // ==== OpenAI ====
+            Model::Gpt4_1 => 800,
+            Model::Gpt4_1Mini => 160,
+            Model::Gpt4_1Nano => 40,
+            Model::Gpt4o => 1000,
+            Model::Gpt4oMini => 60,
+            Model::GptO3 => 800,
+            Model::GptO3Pro => 8000,
+            Model::GptO3DeepResearch => 4000,
+            Model::GptO4Mini => 440,
+            Model::GptO3Mini => 440,
+            Model::GptO1 => 6000,
+            Model::GptO1Mini => 440,
+
+            // ==== Anthropic ====
+            Model::ClaudeOpus4 => 7500,
+            Model::ClaudeSonnet4 => 1500,
+            Model::ClaudeHaiku3_5 => 400,
+            Model::ClaudeOpus3 => 7500,
+            Model::ClaudeSonnet3_7 => 1500,
+            Model::ClaudeHaiku3 => 125,
+
+            // ==== Gemini (Google) ====
+            Model::Gemini25ProPreview => 1000,
+            Model::Gemini25FlashPreview => 250,
+            Model::Gemini20Flash => 40,
+            Model::Gemini20FlashLite => 30,
+            Model::Gemini15Flash => 30,
+            Model::Gemini15Flash8B => 15,
+            Model::Gemini15Pro => 500,
+
+            // ==== Mistral ====
+            Model::MistralMedium3 => 200,
+            Model::MagistralMedium => 500,
+            Model::MistralLarge => 600,
+            Model::DevstralMedium => 200,
+            Model::MistralSmall3_2 => 30,
+            Model::MagistralSmall => 150,
+            Model::Codestral => 90,
+            Model::DevstralSmall => 30,
+            Model::MistralNemo => 15,
+            Model::PixtralLarge => 600,
+            Model::Pixtral12B => 15,
+            Model::Ministral8B_24_10 => 100,
+            Model::Ministral3B_24_10 => 4,
+
+            Model::DeepSeekR1 => 219,
+            Model::DeepSeekV3 => 110,
+        }
+    }
+    //    pub fn price(&self) -> u32 {
+    //        match self {
+    //            // ==== OpenAI ====
+    //            Model::Gpt4_1 => 1040,
+    //            Model::Gpt4_1Mini => 208,
+    //            Model::Gpt4_1Nano => 52,
+    //            Model::GptO3 => 1040,
+    //            Model::GptO4Mini => 572,
+    //            Model::GptO3Pro => 10400,
+    //            Model::Gpt4o => 1300,
+    //            Model::Gpt4oMini => 78,
+    //            Model::GptO1 => 7800,
+    //            Model::GptO3DeepResearch => 5200,
+    //            Model::GptO3Mini => 572,
+    //            Model::GptO1Mini => 572,
+    //
+    //            // ==== Anthropic ====
+    //            Model::ClaudeOpus4 => 9360,
+    //            Model::ClaudeSonnet4 => 1872,
+    //            Model::ClaudeHaiku3_5 => 499,
+    //            Model::ClaudeOpus3 => 9360,
+    //            Model::ClaudeSonnet3_7 => 1872,
+    //            Model::ClaudeHaiku3 => 182,
+    //
+    //            // ==== DeepSeek ====
+    //            Model::DeepSeekR1 => 142,
+    //            Model::DeepSeekV3 => 242,
+    //
+    //            // ==== Gemini (Google) ====
+    //            Model::Gemini25FlashPreview => 380,
+    //            Model::Gemini25ProPreview => 1820,
+    //            Model::Gemini20Flash => 52,
+    //            Model::Gemini20FlashLite => 39,
+    //            Model::Gemini15Flash => 78,
+    //            Model::Gemini15Flash8B => 39,
+    //            Model::Gemini15Pro => 1300,
+    //
+    //            // ==== Mistral ====
+    //            Model::MistralMedium3 => 2496,
+    //            Model::MagistralMedium => 7280,
+    //            Model::Codestral => 1248,
+    //            Model::DevstralMedium => 2496,
+    //            Model::MistralLarge => 8320,
+    //            Model::PixtralLarge => 8320,
+    //            Model::Ministral8B_24_10 => 208,
+    //            Model::Ministral3B_24_10 => 83,
+    //            Model::MistralSmall3_2 => 416,
+    //            Model::MagistralSmall => 2080,
+    //            Model::DevstralSmall => 416,
+    //            Model::Pixtral12B => 312,
+    //            Model::MistralNemo => 312,
+    //        }
+    //    }
     pub fn provider(&self) -> AIProvider {
         match self {
             // ==== OpenAI ====

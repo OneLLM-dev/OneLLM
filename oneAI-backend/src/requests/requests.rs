@@ -55,7 +55,7 @@ impl APIInput {
             );
         }
 
-        let price = self.model.price();
+        let price = self.model.output_price();
         let max_allowed = (user.balance as u64) * (1000000 / price as u64);
 
         if max_allowed < max_tokens as u64 {
@@ -87,41 +87,39 @@ impl APIInput {
             }
         }
 
-        let total: u32;
         let unified_response: LlmUnifiedResponse = match self.model.provider() {
             AIProvider::OpenAI => {
                 let openai: OpenAIResponse = from_str(&output?)?;
-                total = openai.usage.total_tokens;
                 openai.into()
             }
             AIProvider::Anthropic => {
                 let claude: ClaudeMessageResponse = from_str(&output?)?;
-                total = claude.usage.input_tokens + claude.usage.output_tokens;
                 claude.into()
             }
             AIProvider::Mistral => {
                 let mistral: MistralResponse = from_str(&output?)?;
-                total = mistral.usage.as_ref().unwrap().total_tokens;
                 mistral.into()
             }
             AIProvider::Gemini => {
                 let gemini: GeminiResponse = from_str(&output?)?;
 
-                total = gemini
-                    .usage_metadata
-                    .as_ref()
-                    .map(|u| u.total_token_count)
-                    .unwrap_or(0);
-
                 gemini.into()
             }
             AIProvider::DeepSeek => {
                 let deepseek: DeepSeekResponse = from_str(&output?)?;
-                total = deepseek.usage.total_tokens;
                 deepseek.into()
             }
         };
-        match update_bal(user.email, -(((price * total) / 100) as i32)).await {
+        let usage = unified_response.usage.as_ref().unwrap();
+
+        let input_cost = self.model.input_price() * usage.input_tokens.unwrap();
+        let output_cost = self.model.output_price() * usage.output_tokens.unwrap();
+
+        let total_cost = input_cost + output_cost;
+
+        // This cast is safe only if total_cost <= i32::MAX
+        let update_val = -(total_cost as i32);
+        match update_bal(user.email, update_val).await {
             Some(_) => Ok(unified_response),
             None => Err("An Unexpected error occurred".into()),
         }
