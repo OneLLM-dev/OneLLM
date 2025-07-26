@@ -1,7 +1,8 @@
 #![allow(non_camel_case_types)]
 use serde::{Deserialize, Serialize};
+use schemars::JsonSchema;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub enum Model {
     // ==== OpenAI ====
     #[serde(rename = "GPT-4.1")]
