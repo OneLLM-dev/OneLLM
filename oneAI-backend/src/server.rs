@@ -1,4 +1,5 @@
 use redis::AsyncCommands;
+use sqlx::PgPool;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower_http::cors::{Any, CorsLayer};
 
@@ -12,8 +13,7 @@ use crate::{
     auth::{
         basicauth::{self},
         twofa::{self, send_verify},
-    },
-    requests::parseapi::APIInput,
+    }, database::init_pool, requests::parseapi::APIInput
 };
 use crate::{payment, utils::*};
 
@@ -84,7 +84,7 @@ pub async fn verify_code(Json(payload): Json<VerifyInput>) -> Json<FailOrSucc> {
     };
 
     if did_verify {
-        match User::verify_user(&payload.email).await {
+        match User::verify_user(None, &payload.email).await {
             Ok(()) => Json(FailOrSucc::Successful("Successful".to_string())),
 
             Err(e) => Json(FailOrSucc::Failure(e.to_string())),
@@ -188,7 +188,7 @@ pub async fn handle_api(headers: HeaderMap, Json(payload): Json<APIInput>) -> Js
         });
     }
 
-    match User::get_row_api(apikey.clone()).await {
+    match User::get_row_api(None, apikey.clone()).await {
         Ok(user_struct) => user_struct,
         Err(e) => {
             return Json(Output {
@@ -220,6 +220,7 @@ pub async fn handle_api(headers: HeaderMap, Json(payload): Json<APIInput>) -> Js
 }
 
 async fn signup_and_update_db(
+    pool: PgPool,
     email: String,
     password: String,
 ) -> Result<Option<User>, Box<dyn std::error::Error>> {
@@ -228,7 +229,7 @@ async fn signup_and_update_db(
         None => return Ok(None),
     };
 
-    match user.new_user().await {
+    match user.new_user(Some(pool)).await {
         Ok(()) => {}
         Err(_) => return Ok(None),
     };
@@ -237,9 +238,10 @@ async fn signup_and_update_db(
 }
 
 pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoResponse {
+    let pool = init_pool().await.expect("Error init pool");
     match query.function {
         WebQuery::Signup => {
-            let user: Option<User> = signup_and_update_db(query.email, query.password)
+            let user: Option<User> = signup_and_update_db(pool, query.email, query.password)
                 .await
                 .unwrap();
 
@@ -264,7 +266,7 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
         //            }
         //        }
         WebQuery::Login => {
-            let mut user = match basicauth::login(query.email, query.password).await {
+            let mut user = match basicauth::login(Some(pool.clone()), query.email, query.password).await {
                 Some(u) => u,
                 None => {
                     return Json(FailOrSucc::Failure("Could not log user in".to_string()));
@@ -273,7 +275,7 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
 
             user.balance /= 1_000_000;
 
-            let token = match User::new_token(user.id).await {
+            let token = match User::new_token(Some(pool), user.id).await {
                 Ok(tok) => tok,
                 Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
             };
@@ -292,7 +294,7 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
 }
 
 async fn login_with_token(Json(query): Json<TokenInput>) -> Json<FailOrSucc> {
-    let mut hidden_user = match User::from_token(query.token.clone()).await {
+    let mut hidden_user = match User::from_token(None, query.token.clone()).await {
         Ok(huser) => huser,
         Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
     };
@@ -304,20 +306,22 @@ async fn login_with_token(Json(query): Json<TokenInput>) -> Json<FailOrSucc> {
 }
 
 pub async fn handle_token_auth(Json(payload): Json<TokenInput>) -> impl IntoResponse {
-    let res = match User::from_token(payload.token.clone()).await {
+    let pool = init_pool().await.expect("Error init pool");
+
+    let res = match User::from_token(Some(pool.clone()), payload.token.clone()).await {
         Ok(u) => u,
         Err(e) => {
             return Json(FailOrSucc::Failure(e.to_string()));
         }
     };
 
-    let user = match User::get_row(res.email).await {
+    let user = match User::get_row(Some(pool.clone()), res.email).await {
         Ok(a) => a,
         Err(e) => return Json(FailOrSucc::Failure(e.to_string())),
     };
 
     if !user
-        .is_verified()
+        .is_verified(Some(pool.clone()))
         .await
         .expect("Error trying to see if user was verified")
     {
@@ -326,7 +330,7 @@ pub async fn handle_token_auth(Json(payload): Json<TokenInput>) -> impl IntoResp
 
     match payload.function {
         WebQuery::NewAPI => match user
-            .generate_apikey(&payload.name.unwrap_or("".to_owned()))
+            .generate_apikey(Some(pool.clone()), &payload.name.unwrap_or("".to_owned()))
             .await
         {
             Ok(api) => Json(FailOrSucc::SuccessData(api)),
@@ -335,6 +339,7 @@ pub async fn handle_token_auth(Json(payload): Json<TokenInput>) -> impl IntoResp
 
         WebQuery::DelAPI => {
             match User::delete_apikey(
+                Some(pool),
                 &payload.token,
                 Some(&payload.name.unwrap_or("".to_string())),
                 false,
@@ -347,7 +352,7 @@ pub async fn handle_token_auth(Json(payload): Json<TokenInput>) -> impl IntoResp
         }
 
         WebQuery::APICount => {
-            match User::get_keynames(&payload.email.unwrap_or("".to_string())).await {
+            match User::get_keynames(Some(pool), &payload.email.unwrap_or("".to_string())).await {
                 Ok(keynamevec) => Json(FailOrSucc::SuccessVecData(keynamevec)),
                 Err(e) => Json(FailOrSucc::Failure(e.to_string())),
             }

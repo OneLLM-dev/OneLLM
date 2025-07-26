@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 
 use crate::{
+    database::init_pool,
     requests::{parseapi::APIInput, responseparser::mistral::MistralResponse},
     utils::User,
 };
@@ -31,6 +32,9 @@ impl APIInput {
         onellm_apikey: String,
     ) -> Result<LlmUnifiedResponse, Box<dyn std::error::Error>> {
         dotenv::dotenv().ok();
+
+        let pool = init_pool().await?;
+
         let mut endpoint = self.endpoint.clone();
         let apikey = match self.model.provider() {
             AIProvider::OpenAI => std::env::var("OPENAI").expect("Error getting OPENAI apikey"),
@@ -47,7 +51,7 @@ impl APIInput {
 
         let mut max_tokens = self.max_tokens;
 
-        let user = User::get_row_api(onellm_apikey).await?;
+        let user = User::get_row_api(Some(pool.clone()), onellm_apikey).await?;
 
         if user.balance <= 1000000 {
             return Err(
@@ -119,7 +123,7 @@ impl APIInput {
 
         // This cast is safe only if total_cost <= i32::MAX
         let update_val = -(total_cost as i32);
-        match update_bal(user.email, update_val).await {
+        match update_bal(Some(pool), user.email, update_val).await {
             Some(_) => Ok(unified_response),
             None => Err("An Unexpected error occurred".into()),
         }
