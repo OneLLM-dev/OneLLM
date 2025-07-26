@@ -1635,6 +1635,7 @@ version = "1.0.2"
 dependencies = [
  "anyhow",
  "reqwest",
+ "schemars",
  "serde",
  "serde_json",
  "tokio",

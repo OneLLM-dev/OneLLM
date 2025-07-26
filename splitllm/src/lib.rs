@@ -8,32 +8,21 @@ pub enum Style {
     Waterfall,
 }
 
-#[derive(JsonSchema)]
-pub enum Tier {
-    High,
-    Medium,
-    Low,
+#[derive(JsonSchema, Serialize, Deserialize)]
+pub struct PromptSlice {
+    pub model: Model,
+    pub prompt: String,
 }
 
-impl Tier {
-    pub fn tier_from_model(model: Model) -> Tier {
-        let price = model.price();
-        match price {
-            0..=499 => Tier::Low,
-            500..=1999 => Tier::Medium,
-            _ => Tier::High,
-        }
-    }
-}
-
-#[derive(JsonSchema)]
+#[derive(JsonSchema, Deserialize, Serialize)]
 pub struct PromptSplit {
     pub style: Style,
-    pub prompts: Vec<String>,
+    pub prompts: Vec<PromptSlice>,
 }
 
-pub async fn split_prompt(input: &str) -> Result<()> {
+pub async fn split_prompt(input: &str) -> Result<PromptSplit> {
     let endpoint = "https://api.openai.com/v1/responses".to_string();
+    let apikey = std::env::var("ONELLM")?;
     let system_message = Message {
         role: "system".to_string(),
         content: include_str!("prompt.txt").to_string(),
@@ -53,5 +42,7 @@ pub async fn split_prompt(input: &str) -> Result<()> {
         r#type: serde_json::to_string_pretty(&schema).unwrap(),
     });
 
-    Ok(())
+    let response_str = serde_json::to_string_pretty(&query.send(apikey).await?)?;
+
+    Ok(serde_json::from_str(&response_str)?)
 }
