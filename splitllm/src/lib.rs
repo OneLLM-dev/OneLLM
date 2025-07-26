@@ -1,8 +1,9 @@
 use anyhow::Result;
 use onellm::input::{APIInput, Message, Model, ResponseFormat};
 use schemars::{JsonSchema, schema_for};
+use serde::{Serialize, Deserialize};
 
-#[derive(JsonSchema)]
+#[derive(JsonSchema, Deserialize, Serialize)]
 pub enum Style {
     Agile,
     Waterfall,
