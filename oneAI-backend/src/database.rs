@@ -1,8 +1,7 @@
 use chrono::{Duration, Utc};
 use dotenv::dotenv;
 use jsonwebtoken::{EncodingKey, Header, encode};
-use sqlx::Row;
-use std::env;
+use sqlx::{PgPool, Row};
 use std::error::Error;
 
 use crate::auth::basicauth::generate_api;
@@ -18,14 +17,26 @@ impl std::fmt::Display for MissingUser {
     }
 }
 
-impl User {
-    pub async fn from_token(token: String) -> Result<HiddenUser, Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
+pub async fn init_pool() -> Result<PgPool, Box<dyn Error>> {
+    if std::env::var("CI").is_err() {
+        dotenv().ok();
+    }
 
-        let url = std::env::var("POSTGRES")?;
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    let url = std::env::var("POSTGRES")?;
+    let pool = sqlx::postgres::PgPool::connect(&url).await?;
+
+    Ok(pool)
+}
+
+impl User {
+    pub async fn from_token(
+        pool: Option<PgPool>,
+        token: String,
+    ) -> Result<HiddenUser, Box<dyn Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         let row = sqlx::query(
             r#"
@@ -51,13 +62,14 @@ impl User {
         Ok(HiddenUser::from_user(&mut user).await)
     }
 
-    pub async fn new_token(user_id: i32) -> Result<String, Box<dyn std::error::Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-
-        let url = std::env::var("POSTGRES")?;
-        let pool = &sqlx::postgres::PgPool::connect(&url).await?;
+    pub async fn new_token(
+        pool: Option<PgPool>,
+        user_id: i32,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         let now = Utc::now();
         let exp = now + Duration::hours(24);
@@ -86,66 +98,58 @@ impl User {
         .bind(&token)
         .bind(now)
         .bind(exp)
-        .execute(pool)
+        .execute(&pool)
         .await?;
 
         Ok(token)
     }
 
-    #[allow(unused)]
-    pub async fn verify_token(payload: &TokenInput) -> Result<(), Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
+    //    pub async fn verify_token(payload: &TokenInput) -> Result<(), Box<dyn Error>> {
+    //        let pool = init_pool().await?;
+    //
+    //        // Check if token exists and is not expired
+    //        let session_row =
+    //            sqlx::query("SELECT user_id FROM sessions WHERE token = $1 AND expires_at > NOW()")
+    //                .bind(&payload.token)
+    //                .fetch_optional(&pool)
+    //                .await?;
+    //
+    //        let user_id = match session_row {
+    //            Some(row) => row.get::<i32, _>("user_id"),
+    //            None => return Err("Invalid or expired token".into()),
+    //        };
+    //
+    //        // Get user email if not in payload
+    //        let email = if let Some(email) = &payload.email {
+    //            email.clone()
+    //        } else {
+    //            let row = sqlx::query("SELECT email FROM users WHERE id = $1")
+    //                .bind(user_id)
+    //                .fetch_one(&pool)
+    //                .await?;
+    //            row.get::<String, _>("email")
+    //        };
+    //
+    //        // Mark user as verified
+    //        sqlx::query("UPDATE users SET verified = TRUE WHERE email = $1")
+    //            .bind(email)
+    //            .execute(&pool)
+    //            .await?;
+    //
+    //        // Optionally mark session as verified too
+    //        sqlx::query("UPDATE sessions SET verified = TRUE WHERE token = $1")
+    //            .bind(&payload.token)
+    //            .execute(&pool)
+    //            .await?;
+    //
+    //        Ok(())
+    //    }
 
-        let url = env::var("POSTGRES")?;
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
-
-        // Check if token exists and is not expired
-        let session_row =
-            sqlx::query("SELECT user_id FROM sessions WHERE token = $1 AND expires_at > NOW()")
-                .bind(&payload.token)
-                .fetch_optional(&pool)
-                .await?;
-
-        let user_id = match session_row {
-            Some(row) => row.get::<i32, _>("user_id"),
-            None => return Err("Invalid or expired token".into()),
+    pub async fn is_verified(&self, pool: Option<PgPool>) -> Result<bool, Box<dyn Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
         };
-
-        // Get user email if not in payload
-        let email = if let Some(email) = &payload.email {
-            email.clone()
-        } else {
-            let row = sqlx::query("SELECT email FROM users WHERE id = $1")
-                .bind(user_id)
-                .fetch_one(&pool)
-                .await?;
-            row.get::<String, _>("email")
-        };
-
-        // Mark user as verified
-        sqlx::query("UPDATE users SET verified = TRUE WHERE email = $1")
-            .bind(email)
-            .execute(&pool)
-            .await?;
-
-        // Optionally mark session as verified too
-        sqlx::query("UPDATE sessions SET verified = TRUE WHERE token = $1")
-            .bind(&payload.token)
-            .execute(&pool)
-            .await?;
-
-        Ok(())
-    }
-
-    pub async fn is_verified(&self) -> Result<bool, Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-
-        let url = std::env::var("POSTGRES")?;
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
 
         let row = sqlx::query("SELECT verified FROM users WHERE email = $1")
             .bind(&self.email)
@@ -157,13 +161,11 @@ impl User {
             None => Ok(false), // Or Err("User not found") if you prefer
         }
     }
-    pub async fn verify_user(email: &str) -> Result<(), Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-
-        let url = env::var("POSTGRES")?;
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    pub async fn verify_user(pool: Option<PgPool>, email: &str) -> Result<(), Box<dyn Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         sqlx::query("UPDATE users SET verified = TRUE WHERE email = $1")
             .bind(email)
@@ -172,12 +174,11 @@ impl User {
 
         Ok(())
     }
-    pub async fn count_apikey(email: &str) -> Result<i64, Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-        let url = env::var("POSTGRES")?;
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    pub async fn count_apikey(pool: Option<PgPool>, email: &str) -> Result<i64, Box<dyn Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         let row = sqlx::query(
             "SELECT COUNT(*) as count \
@@ -193,16 +194,15 @@ impl User {
     }
 
     pub async fn delete_apikey(
+        pool: Option<PgPool>,
         token: &str,
         name: Option<&str>,
         all: bool,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-
-        let url = std::env::var("POSTGRES")?;
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         // 1. Decode JWT and get user_id
         let token_data = jsonwebtoken::decode::<Claims>(
@@ -230,15 +230,18 @@ impl User {
 
         Ok(())
     }
-    pub async fn generate_apikey(&self, name: &str) -> Result<String, Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-        let url = env::var("POSTGRES")?;
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    pub async fn generate_apikey(
+        &self,
+        pool: Option<PgPool>,
+        name: &str,
+    ) -> Result<String, Box<dyn Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         // Count how many keys this user already has
-        let count = Self::count_apikey(&self.email).await?;
+        let count = Self::count_apikey(Some(pool.clone()), &self.email).await?;
 
         if count >= 10 {
             return Err("You have reached the maximum of 10 API keys.".into());
@@ -255,12 +258,11 @@ impl User {
 
         Ok(new_key)
     }
-    pub async fn get_row_api(apikey: String) -> Result<User, Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    pub async fn get_row_api(pool: Option<PgPool>, apikey: String) -> Result<User, Box<dyn Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         let row = sqlx::query(
             "SELECT users.id, users.email, users.password, users.balance, users.verified \
@@ -287,13 +289,11 @@ impl User {
         }
     }
 
-    pub async fn get_row(email: String) -> Result<User, Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-
-        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    pub async fn get_row(pool: Option<PgPool>, email: String) -> Result<User, Box<dyn Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         let row = sqlx::query(
             "SELECT id, email, password, balance, verified FROM users WHERE email = $1",
@@ -318,13 +318,15 @@ impl User {
     }
 
     #[allow(unused)]
-    pub async fn change_password(token: &str, new_password: String) -> Result<(), Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-
-        let url = env::var("POSTGRES")?;
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    pub async fn change_password(
+        pool: Option<PgPool>,
+        token: &str,
+        new_password: String,
+    ) -> Result<(), Box<dyn Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         // Check if token is verified and not expired
         let verified =
@@ -364,19 +366,19 @@ impl User {
         };
 
         // Call the update method on the user to update password
-        user.update_db(TableFields::Password, &new_password).await?;
+        user.update_db(Some(pool), TableFields::Password, &new_password)
+            .await?;
 
         Ok(())
     }
-    pub async fn get_keynames(email: &str) -> Result<Vec<String>, Box<dyn Error>> {
-        // Load .env unless running in CI
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-
-        // Connect to DB
-        let url = env::var("POSTGRES").expect("Postgres DB URL not found");
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    pub async fn get_keynames(
+        pool: Option<PgPool>,
+        email: &str,
+    ) -> Result<Vec<String>, Box<dyn Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         // Get API key names
         let rows = sqlx::query(
@@ -395,12 +397,11 @@ impl User {
 
         Ok(keynames)
     }
-    pub async fn new_user(&self) -> Result<(), Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    pub async fn new_user(&self, pool: Option<PgPool>) -> Result<(), Box<dyn Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         let _user_row = sqlx::query(
             "INSERT INTO users (email, password, balance) VALUES ($1, $2, $3) RETURNING id",
@@ -416,14 +417,14 @@ impl User {
 
     pub async fn update_db(
         &self,
+        pool: Option<PgPool>,
         field: TableFields,
         new_value: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-        let url = std::env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         let mut temp_user = self.clone();
 
@@ -466,13 +467,11 @@ impl User {
         Ok(())
     }
     #[allow(unused)]
-    pub async fn delete_user(email: &str) -> Result<(), Box<dyn Error>> {
-        if std::env::var("CI").is_err() {
-            dotenv().ok();
-        }
-
-        let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
-        let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    pub async fn delete_user(pool: Option<PgPool>, email: &str) -> Result<(), Box<dyn Error>> {
+        let pool = match pool {
+            Some(a) => a,
+            None => init_pool().await?,
+        };
 
         let result = sqlx::query("DELETE FROM users WHERE email = $1")
             .bind(email)
@@ -487,12 +486,7 @@ impl User {
     }
 }
 pub async fn init_db() -> Result<(), Box<dyn Error>> {
-    if std::env::var("CI").is_err() {
-        dotenv().ok();
-    }
-
-    let url = env::var("POSTGRES").expect("POSTGRES DB URL NOT FOUND");
-    let pool = sqlx::postgres::PgPool::connect(&url).await?;
+    let pool = init_pool().await?;
 
     sqlx::migrate!("./migrations").run(&pool).await?;
 

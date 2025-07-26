@@ -62,7 +62,7 @@ pub async fn handle_webhook(StripeEvent(event): StripeEvent) {
                 None => return,
             };
 
-            update_bal(email.to_owned(), amount_total as i32)
+            update_bal(None, email.to_owned(), amount_total as i32)
                 .await
                 .expect("Error while updating balance from stripe");
         }

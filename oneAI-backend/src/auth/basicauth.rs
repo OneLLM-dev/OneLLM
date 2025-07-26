@@ -1,10 +1,11 @@
 use password_auth::{generate_hash, verify_password};
 use rand::Rng;
+use sqlx::PgPool;
 
 use crate::utils::*;
 
-pub async fn login(email: String, password: String) -> Option<User> {
-    let user = match User::get_row(email).await {
+pub async fn login(pool: Option<PgPool>, email: String, password: String) -> Option<User> {
+    let user = match User::get_row(pool, email).await {
         Ok(a) => a,
         Err(_) => return None,
     };
@@ -28,8 +29,8 @@ pub async fn signup(email: String, password: String) -> Option<User> {
     Some(user)
 }
 
-pub async fn update_bal(email: String, change: i32) -> Option<User> {
-    let user = match User::get_row(email).await {
+pub async fn update_bal(pool: Option<PgPool>, email: String, change: i32) -> Option<User> {
+    let user = match User::get_row(pool.clone(), email).await {
         Ok(a) => a,
         Err(_) => {
             return None;
@@ -38,6 +39,7 @@ pub async fn update_bal(email: String, change: i32) -> Option<User> {
 
     match user
         .update_db(
+            pool,
             TableFields::Balance,
             &(user.balance as i32 + change).to_string(),
         )
