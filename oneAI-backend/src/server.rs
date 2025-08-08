@@ -13,7 +13,9 @@ use crate::{
     auth::{
         basicauth::{self},
         twofa::{self, send_verify},
-    }, database::init_pool, requests::parseapi::APIInput
+    },
+    database::init_pool,
+    requests::parseapi::APIInput,
 };
 use crate::{payment, utils::*};
 
@@ -266,12 +268,13 @@ pub async fn handle_post_website(Json(query): Json<WebInput>) -> impl IntoRespon
         //            }
         //        }
         WebQuery::Login => {
-            let mut user = match basicauth::login(Some(pool.clone()), query.email, query.password).await {
-                Some(u) => u,
-                None => {
-                    return Json(FailOrSucc::Failure("Could not log user in".to_string()));
-                }
-            };
+            let mut user =
+                match basicauth::login(Some(pool.clone()), query.email, query.password).await {
+                    Some(u) => u,
+                    None => {
+                        return Json(FailOrSucc::Failure("Could not log user in".to_string()));
+                    }
+                };
 
             user.balance /= 1_000_000;
 
