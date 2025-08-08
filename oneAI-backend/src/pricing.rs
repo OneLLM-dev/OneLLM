@@ -30,6 +30,14 @@ pub enum Model {
     GptO3Mini,
     #[serde(rename = "GPT-o1-Mini")]
     GptO1Mini,
+    #[serde(rename = "GPT-5")]
+    GPT5,
+    #[serde(rename = "GPT-5-mini")]
+    GPT5_Mini,
+    #[serde(rename = "GPT-5-Nano")]
+    GPT5_Nano,
+    #[serde(rename = "GPT-5-Chat-Latest")]
+    GPT5_Chat_Latest,
 
     // ==== Anthropic ====
     #[serde(rename = "Opus-4")]
@@ -112,6 +120,10 @@ impl Model {
             Model::GptO3DeepResearch => "o3-DeepResearch",
             Model::GptO3Mini => "o3-mini",
             Model::GptO1Mini => "o1-mini",
+            Model::GPT5 => "gpt-5",
+            Model::GPT5_Mini => "gpt-5-mini",
+            Model::GPT5_Nano => "gpt-5-nano",
+            Model::GPT5_Chat_Latest => "gpt-5-chat-latest",
 
             // ==== Anthropic ====
             Model::ClaudeOpus4 => "claude-opus-4-20250514",
@@ -165,6 +177,10 @@ impl Model {
             Model::GptO3Mini => 114,
             Model::GptO1 => 1560,
             Model::GptO1Mini => 114,
+            Model::GPT5 => 128,
+            Model::GPT5_Mini => 26,
+            Model::GPT5_Nano => 5,
+            Model::GPT5_Chat_Latest => 130,
 
             // ==== Anthropic ====
             Model::ClaudeOpus4 => 1560,
@@ -219,6 +235,10 @@ impl Model {
             Model::GptO3Mini => 458,
             Model::GptO1 => 6240,
             Model::GptO1Mini => 458,
+            Model::GPT5 => 1040,
+            Model::GPT5_Mini => 208,
+            Model::GPT5_Nano => 42,
+            Model::GPT5_Chat_Latest => 1040,
 
             // ==== Anthropic ====
             Model::ClaudeOpus4 => 7800,
@@ -324,6 +344,10 @@ impl Model {
             | Model::GptO1
             | Model::GptO3DeepResearch
             | Model::GptO3Mini
+            | Model::GPT5
+            | Model::GPT5_Mini
+            | Model::GPT5_Nano
+            | Model::GPT5_Chat_Latest
             | Model::GptO1Mini => AIProvider::OpenAI,
 
             // ==== Anthropic ====
