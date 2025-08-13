@@ -88,6 +88,7 @@ impl APIInput {
             }
             _ => {
                 output = resp.bearer_auth(apikey).send().await?.text().await;
+                dbg!(&output);
             }
         }
 

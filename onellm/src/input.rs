@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types)]
-use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub enum Model {
@@ -29,6 +29,14 @@ pub enum Model {
     GptO3Mini,
     #[serde(rename = "GPT-o1-Mini")]
     GptO1Mini,
+    #[serde(rename = "GPT-5")]
+    GPT5,
+    #[serde(rename = "GPT-5-mini")]
+    GPT5_Mini,
+    #[serde(rename = "GPT-5-Nano")]
+    GPT5_Nano,
+    #[serde(rename = "GPT-5-Chat-Latest")]
+    GPT5_Chat_Latest,
 
     // ==== Anthropic ====
     #[serde(rename = "Opus-4")]
@@ -111,6 +119,10 @@ impl ToString for Model {
             Model::GptO3DeepResearch => "GPT-o3-DeepResearch",
             Model::GptO3Mini => "GPT-o3-Mini",
             Model::GptO1Mini => "GPT-o1-Mini",
+            Model::GPT5 => "GPT-5",
+            Model::GPT5_Mini => "GPT-5-Mini",
+            Model::GPT5_Nano => "GPT-5-Nano", 
+            Model::GPT5_Chat_Latest => "GPT-5-Chat-Latest",
 
             // ==== Anthropic ====
             Model::ClaudeOpus4 => "Opus-4",
@@ -149,62 +161,6 @@ impl ToString for Model {
             Model::MistralNemo => "Mistral-NeMo",
         }
         .to_string()
-    }
-}
-
-impl Model {
-    pub fn price(&self) -> u32 {
-        match self {
-            // ==== OpenAI ====
-            Model::Gpt4_1 => 1040,
-            Model::Gpt4_1Mini => 208,
-            Model::Gpt4_1Nano => 52,
-            Model::GptO3 => 1040,
-            Model::GptO4Mini => 572,
-            Model::GptO3Pro => 10400,
-            Model::Gpt4o => 1300,
-            Model::Gpt4oMini => 78,
-            Model::GptO1 => 7800,
-            Model::GptO3DeepResearch => 5200,
-            Model::GptO3Mini => 572,
-            Model::GptO1Mini => 572,
-
-            // ==== Anthropic ====
-            Model::ClaudeOpus4 => 9360,
-            Model::ClaudeSonnet4 => 1872,
-            Model::ClaudeHaiku3_5 => 499,
-            Model::ClaudeOpus3 => 9360,
-            Model::ClaudeSonnet3_7 => 1872,
-            Model::ClaudeHaiku3 => 182,
-
-            // ==== DeepSeek ====
-            Model::DeepSeekR1 => 142,
-            Model::DeepSeekV3 => 242,
-
-            // ==== Gemini (Google) ====
-            Model::Gemini25FlashPreview => 380,
-            Model::Gemini25ProPreview => 1820,
-            Model::Gemini20Flash => 52,
-            Model::Gemini20FlashLite => 39,
-            Model::Gemini15Flash => 78,
-            Model::Gemini15Flash8B => 39,
-            Model::Gemini15Pro => 1300,
-
-            // ==== Mistral ====
-            Model::MistralMedium3 => 2496,
-            Model::MagistralMedium => 7280,
-            Model::Codestral => 1248,
-            Model::DevstralMedium => 2496,
-            Model::MistralLarge => 8320,
-            Model::PixtralLarge => 8320,
-            Model::Ministral8B_24_10 => 208,
-            Model::Ministral3B_24_10 => 83,
-            Model::MistralSmall3_2 => 416,
-            Model::MagistralSmall => 2080,
-            Model::DevstralSmall => 416,
-            Model::Pixtral12B => 312,
-            Model::MistralNemo => 312,
-        }
     }
 }
 
