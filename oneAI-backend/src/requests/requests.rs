@@ -1,5 +1,4 @@
 #![allow(non_snake_case)]
-#[allow(unused)]
 use crate::{
     auth::basicauth::update_bal,
     requests::responseparser::{
@@ -7,6 +6,7 @@ use crate::{
         gemini::GeminiResponse, openai::OpenAIResponse,
     },
 };
+
 use reqwest::Error;
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;

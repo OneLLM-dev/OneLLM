@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*' # Only runs on version tags like v1.0.0
+      - "v*" # Only runs on version tags like v1.0.0
 
 jobs:
   build:
@@ -44,4 +44,3 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/app/target/x86_64-unknown-linux-gnu/release/OneLLM-Website && git pull && sudo systemctl restart oneai-backend.service
-

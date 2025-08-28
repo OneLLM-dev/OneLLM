@@ -121,7 +121,7 @@ impl ToString for Model {
             Model::GptO1Mini => "GPT-o1-Mini",
             Model::GPT5 => "GPT-5",
             Model::GPT5_Mini => "GPT-5-Mini",
-            Model::GPT5_Nano => "GPT-5-Nano", 
+            Model::GPT5_Nano => "GPT-5-Nano",
             Model::GPT5_Chat_Latest => "GPT-5-Chat-Latest",
 
             // ==== Anthropic ====

@@ -2,7 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -40,8 +40,8 @@ jobs:
             sleep 3
           done
 
-      - name: Run tests from testing.rs 
-        run: cargo test --bin oneAI-backend 
+      - name: Run tests from testing.rs
+        run: cargo test --bin oneAI-backend
 
       - name: Cargo check
-        run: cargo check --bin oneAI-backend 
+        run: cargo check --bin oneAI-backend

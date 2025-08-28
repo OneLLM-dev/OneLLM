@@ -1,11 +1,14 @@
 # OneLLM:
 
 ## TODO List:
+
 1. Make Proposal for 5k for testing and Beta launch
 1. Use tokens for security reasons
 
 ## Testing commands:
+
 ### DeepSeek:
+
 ```zsh
 curl -X POST http://127.0.0.1:3000/api \
   -H "Content-Type: application/json" \
@@ -26,9 +29,10 @@ curl -X POST http://127.0.0.1:3000/api \
     "logprobs": false,
     "top_logprobs": null
   }'
-  ```
+```
 
-### Gemini (API Key auth isn't working, but parsing and everything else is working): 
+### Gemini (API Key auth isn't working, but parsing and everything else is working):
+
 ### Gemini has been disabled and will only be activated later once the oauth2 is fixed
 
 ```zsh
@@ -68,7 +72,7 @@ curl -X POST http://127.0.0.1:3000/api \
       { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_LOW_AND_ABOVE" }
     ]
   }'
-  ```
+```
 
 ### OpenAI
 
