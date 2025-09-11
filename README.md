@@ -1,79 +1,9 @@
 # OneLLM:
 
-## TODO List:
+# OneLLM was a project that aimed to create a single interface for interacting with multiple LLMs. It was built using the Rust programming language and Axum.
+# It was live from 11 July 2025 to 28 August 2025.
+# This one project taught me more than any other project I have done.
+# I put it under the MIT license, so that others can use it to learn from it.
+# You have the right to use it for any purpose, and if you make money off of it, just open an issue to let me know.
 
-1. Make Proposal for 5k for testing and Beta launch
-1. Use tokens for security reasons
-
-## Testing commands:
-
-### DeepSeek:
-
-```zsh
-curl -X POST http://127.0.0.1:3000/api \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer oa-43438316878177947386" \
-  -d '{
-    "endpoint": "https://api.deepseek.com/chat/completions",
-    "model": "DeepSeek-Chat",
-    "messages": [
-      { "role": "system", "content": "You are a helpful assistant." },
-      { "role": "user", "content": "Hello!" }
-    ],
-    "frequency_penalty": 0,
-    "max_tokens": 2048,
-    "presence_penalty": 0,
-    "stream": false,
-    "temperature": 1,
-    "top_p": 1,
-    "logprobs": false,
-    "top_logprobs": null
-  }'
-```
-
-### Gemini (API Key auth isn't working, but parsing and everything else is working):
-
-### Gemini has been disabled and will only be activated later once the oauth2 is fixed
-
-```zsh
-curl -X POST http://127.0.0.1:3000/api \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer oa-32347951672996891279" \
-  -d '{
-    "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
-    "model": "1.5-Flash",
-    "temperature": 1,
-    "top_p": 1,
-    "top_k": 40,
-    "candidate_count": 1,
-    "max_tokens": 2048,
-    "stream": false,
-    "messages": [],
-    "contents": [
-      {
-        "role": "user",
-        "parts": [
-          { "text": "Hello!" }
-        ]
-      }
-    ],
-    "generation_config": {
-      "temperature": 1,
-      "top_p": 1,
-      "top_k": 40,
-      "candidate_count": 1,
-      "max_output_tokens": 2048,
-      "stop_sequences": []
-    },
-    "safety_settings": [
-      { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_LOW_AND_ABOVE" },
-      { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_LOW_AND_ABOVE" },
-      { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_LOW_AND_ABOVE" },
-      { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_LOW_AND_ABOVE" }
-    ]
-  }'
-```
-
-### OpenAI
-
-### Claude
+# Thank you for using OneLLM!
