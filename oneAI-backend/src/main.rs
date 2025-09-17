@@ -7,7 +7,6 @@ mod server;
 mod testing;
 mod utils;
 
-
 use server::server;
 
 #[tokio::main]
